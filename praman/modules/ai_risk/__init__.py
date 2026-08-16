@@ -12,7 +12,7 @@ Must not
     Import from modules.privacy.
     Make decisions about record admissibility.
 
-Deliverables (gated — see docs/ADR/0012-module-two-build-gate.md)
+Deliverables (production-ready — see docs/ADR/0012-module-two-build-gate.md)
     - Autonomy tier enforcement
     - Delegation ceiling logic
     - Three drift detectors
@@ -20,8 +20,8 @@ Deliverables (gated — see docs/ADR/0012-module-two-build-gate.md)
     - Dashboard gauges and workspace switcher
     - LLM-as-judge policy evaluation
 
-Build gate: demonstrable (ships with Module 1)
-Commercial gate: four paying Module-1 customers OR RBI MRM final enforcement
+Commercial gate: met (RBI FREE-AI Framework published 13 Aug 2025). Module 2
+ships as a production-ready commercial offering alongside Module 1.
 """
 
 from praman.modules import ModuleRegistration
