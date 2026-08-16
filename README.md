@@ -1,7 +1,9 @@
 # Praman — Tamper-Evident Evidence Engine for Regulated AI in India
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
-**Status:** Development · **Last updated:** 10 Aug 2026
+**Status:** Live · **Last updated:** 16 Aug 2026
+
+**Live demo:** https://praman-evidence-engine.vercel.app · **Backend:** https://praman-evidence-engine.onrender.com/health
 
 ---
 
@@ -20,10 +22,8 @@ Opposing counsel asks one question that ends the matter:
 ## Two Modules, One Spine
 
 ```
-┌─────────────────────────────────────┐
-│ Module 1: Privacy — BSA §63 Evidence│ Ledger + HMAC + Merkle + signature
-│ Module 2: AI Risk — RBI MRM Governance│ Autonomy tiers + drift + breaker
-└─────────────────────────────────────┘
+Module 1: Privacy   — BSA §63 Evidence      — Ledger + HMAC + Merkle + signature
+Module 2: AI Risk    — RBI FREE-AI Governance — Autonomy tiers + drift + breaker
 ```
 
 ### Module 1: Court-Admissible Evidence (Privacy)
@@ -117,7 +117,7 @@ If the event involves an agent decision:
 
 ```bash
 # Clone
-git clone https://github.com/YOUR_USERNAME/praman-evidence-engine.git
+git clone https://github.com/omdch26/praman-evidence-engine.git
 cd praman-evidence-engine
 
 # Virtual environment
@@ -235,12 +235,11 @@ See [`praman/domain/canonical.py`](praman/domain/canonical.py) for the implement
 | [`GLOSSARY.md`](docs/GLOSSARY.md) | Fixed vocabulary (one word per concept) |
 | [`LIMITATIONS.md`](docs/LIMITATIONS.md) | Every stub, every untested assumption, transparency first |
 | [`SCORING.md`](docs/SCORING.md) | Why drift detection is stubbed; production approaches |
-| [`ADR/`](docs/ADR/) | Architectural Decision Records (layered architecture, Merkle vs blockchain, HMAC vs hash, etc.) |
-| **Commercial track** | [`docs/commercial/`](docs/commercial/) — Market thesis, pricing, GTM, unit economics, kill criteria |
-
-**For a Big-4 partner or CTO:** Read `ARCHITECTURE.md` (10 min), then [`docs/DEFENCE_BRIEF.md`](docs/commercial/DEFENCE_BRIEF.md) (hard questions + answers).
+| [`ADR/`](docs/ADR/) | Architectural Decision Records (layered architecture, Merkle vs blockchain, HMAC vs hash, module-two build gate, OTel conventions) |
 
 **For the next engineer:** Read `ONBOARDING.md` (1h), then start with `domain/` and work outward.
+
+**For a CFO, CTO, or compliance reviewer:** Open the [live demo](https://praman-evidence-engine.vercel.app) — plain-English by default, with an expert toggle that reveals the hash chain, the Merkle root, and a table mapping each feature to the specific regulation it satisfies.
 
 ---
 
@@ -248,20 +247,20 @@ See [`praman/domain/canonical.py`](praman/domain/canonical.py) for the implement
 
 ### Live (Free Tier)
 
-**Backend:** [Render](https://render.com) (Free, 750 hrs/month, ~60s cold start)  
+**Backend:** [Render](https://render.com) (Free, 750 hrs/month, ~60s cold start) — built and run from the repo's `Dockerfile`  
 **Database:** [Neon](https://neon.tech) (Free Postgres, 3GB storage)  
-**Frontend:** [Vercel](https://vercel.com) (Free, never sleeps)
+**Frontend:** [Vercel](https://vercel.com) (Free, never sleeps) — serves the static `frontend/demo.html`
 
-**Deployment is automated:**
+**Deployment is automated on push:**
 ```bash
 git push origin main
-# → GitHub → Render → Live at https://praman-api.onrender.com/health
-# → GitHub → Vercel → Live at https://praman-demo.vercel.app
+# → GitHub → Render → Live at https://praman-evidence-engine.onrender.com/health
+# → GitHub → Vercel → Live at https://praman-evidence-engine.vercel.app
 ```
 
 ### Configuration
 
-Set environment variables on Render / Vercel:
+Set environment variables on Render:
 
 ```bash
 DATABASE_URL=postgresql://...  # Neon connection string
@@ -271,7 +270,7 @@ MODULE_AI_RISK_ENABLED=true
 OTEL_ENABLED=false  # Development mode
 ```
 
-See [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for runbooks (Render + Neon + Vercel).
+The Vercel project needs no environment variables — `frontend/demo.html` calls the Render backend directly and its `vercel.json` sets Root Directory to `frontend`.
 
 ---
 
@@ -357,9 +356,9 @@ MIT. Use it as you wish. Include a copy of `LICENSE` if you redistribute.
 
 ## Questions?
 
-- **How does this differ from [other vendor]?** See [`docs/commercial/03-COMPETITIVE-LANDSCAPE.md`](docs/commercial/03-COMPETITIVE-LANDSCAPE.md)
-- **Is this admissible in court?** See [`LIMITATIONS.md`](docs/LIMITATIONS.md) under "Regulatory Testing"
-- **How much does it cost?** See [`docs/commercial/04-PRICING-MODEL.md`](docs/commercial/04-PRICING-MODEL.md)
+- **Why not blockchain?** See [`docs/ADR/0002-merkle-over-blockchain.md`](docs/ADR/0002-merkle-over-blockchain.md), or the cost comparison in the [live demo](https://praman-evidence-engine.vercel.app)
+- **Is this admissible in court?** See [`LIMITATIONS.md`](docs/LIMITATIONS.md) — the BSA §63 certificate format is implemented; court admissibility itself has not been tested
+- **Which regulation does each feature satisfy?** Flip the expert toggle in the [live demo](https://praman-evidence-engine.vercel.app) for a feature-by-feature mapping to DPDP Rules 2025, RBI's FREE-AI Framework, and BSA §63
 - **For technical questions:** Open an issue. Read [`ONBOARDING.md`](docs/ONBOARDING.md) first.
 
 ---

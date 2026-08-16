@@ -1,7 +1,7 @@
 # Praman — Known Limitations and Stubs
 
-**Last updated:** 10 Aug 2026  
-**Status:** Disclosed; see ADRs for context
+**Last updated:** 16 Aug 2026  
+**Status:** Disclosed; see ADRs for context. Reviewed 16 Aug 2026 — all three stubs below (drift detection, HMAC key, RFC 3161) are unchanged and still accurate.
 
 This document lists every stub, shortcut, and untested assumption. Read this before claiming anything is production-ready.
 
@@ -312,4 +312,3 @@ Format:
 
 - `ARCHITECTURE.md` — System design
 - `ADR/0012-module-two-build-gate.md` — Why Module 2 has a commercial gate
-- `docs/commercial/08-VALIDATION-METHOD.md` — How these gaps were identified

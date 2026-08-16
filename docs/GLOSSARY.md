@@ -43,16 +43,17 @@ Introducing a synonym costs more than the 5 seconds it saves the writer.
 
 | Term | Meaning | Context |
 |---|---|---|
-| **DPDP Act 2023** | Data Protection Act; effective 13 May 2027; penalties up to ₹250 crore. | Privacy module built to this regulation |
+| **DPDP Act 2023** | Data Protection Act. DPDP Rules 2025 notified 14 Nov 2025 (G.S.R. 846(E)); enforcement phased across 14 Nov 2025, 14 Nov 2026, and 14 May 2027; penalties up to ₹250 crore. | Privacy module built to this regulation |
+| **DPDP Rules 2025** | Implementing rules for the DPDP Act, notified 14 Nov 2025. The Consent Manager framework is being operationalised June–Aug 2026, ahead of the Nov 2026 phase. | Determines the current live compliance window |
 | **§6 (Purpose limitation)** | Data collected for purpose A cannot be used for purpose B without fresh consent. | We solve this with zero PII on the ledger |
 | **§12 (Right to erasure)** | Data principals can demand deletion; immutable audit trail conflicts with this. | Module 1 resolves by never storing PII |
 | **Data Fiduciary** | Organisation that collects and processes data (usually the customer). | Bank is the Fiduciary; Praman is the vendor |
 | **Data Principal** | Person whose data is being processed (customer of the bank). | Individual whose consent is logged |
-| **BSA 2023** | Bharatiya Sakshya Adhiniyam; evidence law; in force 1 July 2024. | Module 1 builds to this |
-| **§63 (Admissibility of electronic records)** | Electronic record is admissible if accompanied by a certificate attesting how it was produced. | We generate the certificate; customer signs Part B |
+| **BSA 2023** | Bharatiya Sakshya Adhiniyam; evidence law; in force 1 July 2024, replacing the Indian Evidence Act 1872. | Module 1 builds to this |
+| **§63 (Admissibility of electronic records)** | Electronic record is admissible if accompanied by a certificate attesting how it was produced. Two certificate types: by Party (device particulars + hash values) and by Expert (technical authentication). | We generate the Certificate by Party; customer signs Part B |
 | **Schedule (to §63)** | Prescribed format for the certificate; two parts (Part A: description, Part B: attestation). | Our PDF is modelled on this |
-| **RBI MRM** | Reserve Bank's Model Risk Management guidance; draft June 2026, final pending. | Module 2 (AI Risk) is built for this |
-| **Kill-switch** | Ability to halt an AI/ML model in production; mandated in RBI MRM for models. | Module 2's circuit breaker implements this |
+| **RBI FREE-AI Framework** | "Framework for Responsible and Ethical Enablement of AI" — RBI's committee report, released 13 Aug 2025. 7 Sutras, 6 Pillars, 26 Recommendations. Applies to all RBI-regulated entities (banks, NBFCs, payment operators, fintechs). Requires a board-approved AI policy with lifecycle governance. | Module 2 (AI Risk) is built for this |
+| **Kill-switch** | Ability to halt an AI/ML model in production. | Module 2's circuit breaker implements this |
 | **Significant Data Fiduciary** | Organisations the government designates as handling sensitive data; extra obligations. | SDF list not yet published |
 
 ---
@@ -81,4 +82,4 @@ Introducing a synonym costs more than the 5 seconds it saves the writer.
 
 ## Related
 
-See `ARCHITECTURE.md` for system concepts. See `docs/commercial/` for business vocabulary.
+See `ARCHITECTURE.md` for system concepts.

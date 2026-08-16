@@ -1,6 +1,6 @@
 # Praman — System Architecture
 
-**Status:** Active · **Last updated:** 10 Aug 2026
+**Status:** Active · **Last updated:** 16 Aug 2026
 
 ---
 
@@ -11,7 +11,7 @@ Praman is a dual-module platform for regulated AI in India. Both modules share a
 ```
 ┌─────────────────────────────────────┐
 │  Module 1: Privacy (BSA §63)        │  Court-admissible evidence layer
-│  Module 2: AI Risk (RBI MRM)        │  Agent governance & drift detection
+│  Module 2: AI Risk (RBI FREE-AI)    │  Agent governance & drift detection
 ├─────────────────────────────────────┤
 │  Shared Spine:                      │
 │  - Event Ledger (append-only)       │
@@ -209,7 +209,7 @@ docs/
 
 ---
 
-### Module 2: AI Risk (RBI MRM)
+### Module 2: AI Risk (RBI FREE-AI Framework)
 
 **Responsibility:** Govern agent autonomy and detect operational drift.
 
@@ -306,8 +306,10 @@ Five concerns are behind Strategy interfaces:
 
 ```
 Frontend (Vercel)
-   ├── React + Vite (placeholder)
-   └── Placeholder homepage with two-module navigation
+   └── frontend/demo.html — single static file, no build step
+       Calls the Render backend directly via fetch(); progressive
+       disclosure (plain English by default, expert toggle reveals
+       hash chain + regulatory citations)
 
 Backend (Render, Free tier)
    ├── FastAPI on python:3.11-slim

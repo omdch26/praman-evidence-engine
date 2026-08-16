@@ -26,7 +26,7 @@ Read `README.md` first. Then read these sections of `ARCHITECTURE.md`:
 Clone the repo:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/praman-evidence-engine.git
+git clone https://github.com/omdch26/praman-evidence-engine.git
 cd praman-evidence-engine
 ```
 
@@ -178,7 +178,7 @@ If the repo does not answer your question, that is a bug in the docs. File it.
 - Architectural questions? Read `docs/ARCHITECTURE.md` and the relevant ADR (`docs/ADR/0001-*`)
 - API questions? Check `api/` routers and their docstrings
 - Cryptographic questions? Read `domain/` and the test that proves it
-- Regulatory questions? Check `docs/commercial/` and the relevant Act/Section
+- Regulatory questions? Check `docs/GLOSSARY.md` and the relevant Act/Section
 
 ---
 
@@ -260,7 +260,7 @@ Every day, ask yourself:
 4. Is every stub disclosed in `docs/LIMITATIONS.md`?
 5. Can they add a new policy engine by touching two files?
 6. Does the architecture diagram match the actual folder tree?
-7. Can they deploy from `docs/DEPLOYMENT.md` alone, with no tribal knowledge?
+7. Can they deploy from the README's Deployment section alone, with no tribal knowledge?
 
 **Any "no" is the next task.**
 
