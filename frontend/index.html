@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Praman Demo — Tamper-Evident Evidence Engine</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .tagline {
+            font-size: 1.1rem;
+            color: #94a3b8;
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: rgba(96, 165, 250, 0.5);
+            background: rgba(30, 41, 59, 0.95);
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: #60a5fa;
+        }
+
+        .card p {
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #60a5fa, #3b82f6);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(96, 165, 250, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(96, 165, 250, 0.2);
+            color: #60a5fa;
+            border: 1px solid #60a5fa;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(96, 165, 250, 0.3);
+        }
+
+        .output-box {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-height: 200px;
+            overflow-y: auto;
+            color: #34d399;
+        }
+
+        .output-box.error {
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #34d399;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.offline {
+            background: #ef4444;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .merkle-viz {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(96, 165, 250, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            overflow-x: auto;
+        }
+
+        .leaf { color: #fbbf24; }
+        .node { color: #60a5fa; }
+        .root { color: #34d399; font-weight: bold; }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(96, 165, 250, 0.3);
+            border-top-color: #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .event-counter {
+            display: inline-block;
+            background: rgba(96, 165, 250, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #60a5fa;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔒 Praman Demo</h1>
+            <p class="tagline">Tamper-Evident Evidence Engine for Regulated AI</p>
+        </header>
+
+        <div class="demo-grid">
+            <!-- Module 1: Privacy & Evidence -->
+            <div class="card">
+                <h2>📋 Module 1: Privacy Evidence</h2>
+                <p>Create a tamper-evident event. Each event is HMAC-chained and included in the Merkle root.</p>
+
+                <div>
+                    <label style="font-size: 0.85rem; color: #94a3b8;">Event Type:</label>
+                    <select id="eventType" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); color: #e2e8f0; border-radius: 6px;">
+                        <option value="consent_granted">Consent Granted</option>
+                        <option value="data_access">Data Access</option>
+                        <option value="policy_evaluation">Policy Evaluation</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <label style="font-size: 0.85rem; color: #94a3b8;">Agent Name (optional):</label>
+                    <input type="text" id="agentName" placeholder="e.g., RiskScoreAgent"
+                           style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); color: #e2e8f0; border-radius: 6px;">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="postEvent()">POST Event</button>
+                    <button class="btn-secondary" onclick="getEventCount()">Event Count</button>
+                </div>
+
+                <div id="eventOutput" class="output-box" style="display: none;"></div>
+                <div id="eventCounter" class="event-counter" style="display: none;"></div>
+            </div>
+
+            <!-- Module 2: AI Governance -->
+            <div class="card">
+                <h2>🤖 Module 2: AI Governance</h2>
+                <p>Evaluate if an agent can perform an action given its autonomy tier and drift status.</p>
+
+                <div>
+                    <label style="font-size: 0.85rem; color: #94a3b8;">Autonomy Tier:</label>
+                    <select id="autonomyTier" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); color: #e2e8f0; border-radius: 6px;">
+                        <option value="OBSERVE">OBSERVE (read-only)</option>
+                        <option value="PROPOSE">PROPOSE (suggest)</option>
+                        <option value="ACT_BOUNDED">ACT_BOUNDED (act with limits)</option>
+                        <option value="ACT_FULL">ACT_FULL (unrestricted)</option>
+                    </select>
+                </div>
+
+                <div style="margin-top: 1rem;">
+                    <label style="font-size: 0.85rem; color: #94a3b8;">Tool Name:</label>
+                    <select id="toolName" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; background: rgba(15,23,42,0.8); border: 1px solid rgba(148,163,184,0.3); color: #e2e8f0; border-radius: 6px;">
+                        <option value="read">read (safe)</option>
+                        <option value="write">write (risky)</option>
+                        <option value="delete">delete (dangerous)</option>
+                    </select>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="evaluateGovernance()">Evaluate</button>
+                    <button class="btn-secondary" onclick="getGovernanceStatus()">Status</button>
+                </div>
+
+                <div id="governanceOutput" class="output-box" style="display: none;"></div>
+            </div>
+
+            <!-- Certificates & Proof -->
+            <div class="card">
+                <h2>📜 Certificates & Merkle Root</h2>
+                <p>Generate a BSA §63 certificate (tamper-evident proof) over all logged events.</p>
+
+                <div class="button-group">
+                    <button class="btn-primary" onclick="getCertificate()">Get Certificate</button>
+                    <button class="btn-secondary" onclick="getMerkleRoot()">Merkle Root</button>
+                </div>
+
+                <div id="certificateOutput" class="output-box" style="display: none;"></div>
+                <div id="merkleViz" class="merkle-viz" style="display: none;"></div>
+
+                <div class="info-box">
+                    <strong>What is this?</strong> The certificate is a signed proof that these events exist and have not been tampered with. Any change to any event changes the root.
+                </div>
+            </div>
+        </div>
+
+        <!-- Health Check & Backend Status -->
+        <div class="card" style="margin-bottom: 2rem;">
+            <h2>🔌 Backend Status</h2>
+            <div id="backendStatus" style="margin: 1rem 0;">
+                <span class="status-indicator"></span>
+                <span id="statusText">Checking...</span>
+            </div>
+            <button class="btn-secondary" onclick="checkHealth()">Refresh Status</button>
+            <div id="healthOutput" class="output-box" style="display: none;"></div>
+        </div>
+
+        <!-- Documentation Link -->
+        <footer style="text-align: center; color: #64748b; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(148, 163, 184, 0.2);">
+            <p>📖 <a href="https://github.com/YOUR_USERNAME/praman-evidence-engine/blob/main/docs/ARCHITECTURE.md" style="color: #60a5fa; text-decoration: none;">Read Full Architecture</a> ·
+            <a href="https://github.com/YOUR_USERNAME/praman-evidence-engine" style="color: #60a5fa; text-decoration: none;">GitHub Repo</a></p>
+            <p style="margin-top: 1rem; font-size: 0.9rem;">Built for regulated AI compliance in India (DPDP §12, RBI MRM)</p>
+        </footer>
+    </div>
+
+    <script>
+        const API_URL = 'https://praman-evidence-engine.onrender.com';
+        let eventCount = 0;
+
+        // Check backend health on page load
+        document.addEventListener('DOMContentLoaded', checkHealth);
+
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+
+                document.querySelector('.status-indicator').classList.remove('offline');
+                document.getElementById('statusText').textContent =
+                    `✓ Backend live (v${data.version}, ${data.environment} mode)`;
+
+                const healthBox = document.getElementById('healthOutput');
+                healthBox.textContent = JSON.stringify(data, null, 2);
+                healthBox.style.display = 'block';
+            } catch (error) {
+                document.querySelector('.status-indicator').classList.add('offline');
+                document.getElementById('statusText').textContent = '✗ Backend offline';
+                document.getElementById('healthOutput').textContent = `Error: ${error.message}`;
+                document.getElementById('healthOutput').classList.add('error');
+                document.getElementById('healthOutput').style.display = 'block';
+            }
+        }
+
+        async function postEvent() {
+            const eventType = document.getElementById('eventType').value;
+            const agentName = document.getElementById('agentName').value || 'DemoAgent';
+
+            const payload = {
+                event_type: eventType,
+                module: 'privacy',
+                principal_id_hash: `sha256:${Math.random().toString(36).substr(2, 9)}`,
+                payload: {
+                    agent_name: agentName,
+                    action: 'demo',
+                },
+                timestamp: new Date().toISOString()
+            };
+
+            const outputBox = document.getElementById('eventOutput');
+            outputBox.textContent = 'Sending...';
+            outputBox.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/events`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Tenant-ID': 'demo-tenant'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                eventCount++;
+
+                outputBox.textContent = JSON.stringify(data, null, 2);
+                outputBox.classList.remove('error');
+                outputBox.style.display = 'block';
+
+                document.getElementById('eventCounter').textContent = `✓ Events posted: ${eventCount}`;
+                document.getElementById('eventCounter').style.display = 'inline-block';
+            } catch (error) {
+                outputBox.textContent = `Error: ${error.message}`;
+                outputBox.classList.add('error');
+                outputBox.style.display = 'block';
+            }
+        }
+
+        async function getEventCount() {
+            const outputBox = document.getElementById('eventOutput');
+            outputBox.textContent = `${eventCount} events posted in this session`;
+            outputBox.style.display = 'block';
+        }
+
+        async function evaluateGovernance() {
+            const agentName = document.getElementById('agentName').value || 'DemoAgent';
+            const autonomyTier = document.getElementById('autonomyTier').value;
+            const toolName = document.getElementById('toolName').value;
+
+            const payload = {
+                agent_name: agentName,
+                autonomy_tier: autonomyTier,
+                tool_name: toolName
+            };
+
+            const outputBox = document.getElementById('governanceOutput');
+            outputBox.textContent = 'Evaluating...';
+            outputBox.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/governance/evaluate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Tenant-ID': 'demo-tenant'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                outputBox.textContent = JSON.stringify(data, null, 2);
+                outputBox.classList.remove('error');
+                outputBox.style.display = 'block';
+            } catch (error) {
+                outputBox.textContent = `Error: ${error.message}`;
+                outputBox.classList.add('error');
+                outputBox.style.display = 'block';
+            }
+        }
+
+        async function getGovernanceStatus() {
+            const outputBox = document.getElementById('governanceOutput');
+            outputBox.textContent = 'Loading status...';
+            outputBox.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/governance/status`, {
+                    headers: {
+                        'X-Tenant-ID': 'demo-tenant'
+                    }
+                });
+
+                const data = await response.json();
+                outputBox.textContent = JSON.stringify(data, null, 2);
+                outputBox.classList.remove('error');
+                outputBox.style.display = 'block';
+            } catch (error) {
+                outputBox.textContent = `Error: ${error.message}`;
+                outputBox.classList.add('error');
+                outputBox.style.display = 'block';
+            }
+        }
+
+        async function getCertificate() {
+            const outputBox = document.getElementById('certificateOutput');
+            outputBox.textContent = 'Generating certificate...';
+            outputBox.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/certificates/latest`, {
+                    headers: {
+                        'X-Tenant-ID': 'demo-tenant'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+                outputBox.textContent = JSON.stringify(data, null, 2);
+                outputBox.classList.remove('error');
+                outputBox.style.display = 'block';
+            } catch (error) {
+                outputBox.textContent = `Error: ${error.message}`;
+                outputBox.classList.add('error');
+                outputBox.style.display = 'block';
+            }
+        }
+
+        async function getMerkleRoot() {
+            const outputBox = document.getElementById('merkleViz');
+            outputBox.textContent = 'Computing Merkle root...';
+            outputBox.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_URL}/certificates/latest`, {
+                    headers: {
+                        'X-Tenant-ID': 'demo-tenant'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.merkle_root) {
+                    outputBox.innerHTML = `
+                        <div class="root">🔐 Merkle Root</div>
+                        <div style="margin-top: 1rem; word-break: break-all; color: #34d399;">
+                            ${data.merkle_root}
+                        </div>
+                        <div style="color: #94a3b8; margin-top: 1rem; font-size: 0.8rem;">
+                            <strong>What this means:</strong> Any change to any event changes this root.
+                            If someone tampers with the ledger, we'll know immediately.
+                        </div>
+                    `;
+                } else {
+                    outputBox.textContent = 'No events yet. POST an event first.';
+                }
+
+                outputBox.classList.remove('error');
+                outputBox.style.display = 'block';
+            } catch (error) {
+                outputBox.textContent = `Error: ${error.message}`;
+                outputBox.classList.add('error');
+                outputBox.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>

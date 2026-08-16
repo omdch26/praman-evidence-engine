@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Praman CXO Demo — Tamper-Proof Evidence</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            border-left: 4px solid #2563eb;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+        }
+
+        .demo-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card h2 {
+            font-size: 1.3rem;
+            color: #1f2937;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+
+        .scenario-box {
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 6px;
+            border-left: 4px solid #f59e0b;
+            margin-bottom: 1rem;
+        }
+
+        .scenario-box strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #d97706;
+        }
+
+        .scenario-box p {
+            color: #374151;
+            font-size: 0.95rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #1f2937;
+            font-size: 0.9rem;
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .event-log {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .event-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .event-icon.ok {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .event-icon.fail {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .event-time {
+            color: #6b7280;
+            min-width: 60px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .event-text {
+            flex: 1;
+            color: #374151;
+        }
+
+        .event-text.edited {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .verification-box {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .verification-box.fail {
+            background: #fef2f2;
+            border-color: #fecaca;
+        }
+
+        .verification-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .verification-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .check-icon.pass {
+            background: #059669;
+            color: white;
+        }
+
+        .check-icon.fail {
+            background: #dc2626;
+            color: white;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #1f2937;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .status-bar {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .status-bar.success {
+            background: #d1fae5;
+            color: #059669;
+            border: 1px solid #86efac;
+        }
+
+        .status-bar.fail {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .comparison-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            margin-bottom: 2rem;
+        }
+
+        .comparison-section h2 {
+            font-size: 1.3rem;
+            color: #1f2937;
+            margin-bottom: 1.5rem;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th {
+            background: #f3f4f6;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .comparison-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            color: #374151;
+        }
+
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .highlight {
+            background: #fef3c7;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .demo-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔒 Praman CXO Demo</h1>
+            <p class="subtitle">Tamper-Proof Evidence for AI Decisions</p>
+        </header>
+
+        <div class="demo-section">
+            <!-- Left: Scenario Setup -->
+            <div class="card">
+                <h2>📋 Scenario Setup</h2>
+
+                <div class="scenario-box">
+                    <strong>Situation:</strong>
+                    <p>A bank approved a loan using an AI system. A customer later claims the decision was unfair. The regulator asks: "Can you prove this AI followed its rules?"</p>
+                </div>
+
+                <div class="input-group">
+                    <label>Bank Name</label>
+                    <input type="text" id="bankName" value="HDFC Bank" readonly>
+                </div>
+
+                <div class="input-group">
+                    <label>Loan Amount</label>
+                    <input type="text" id="loanAmount" value="₹10,00,000" readonly>
+                </div>
+
+                <div class="input-group">
+                    <label>Customer ID (Hashed)</label>
+                    <input type="text" id="customerId" value="sha256:rp1234..." readonly>
+                </div>
+
+                <div class="input-group">
+                    <label>AI Decision</label>
+                    <select id="decision">
+                        <option value="APPROVED">APPROVED (Risk score 0.62, within 0.65 limit)</option>
+                        <option value="DENIED">DENIED (Risk score 0.80, exceeds 0.65 limit)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label>Date</label>
+                    <input type="text" value="August 10, 2026, 2:30 PM IST" readonly>
+                </div>
+
+                <button class="btn-primary" onclick="generateLedger()">Generate Ledger</button>
+            </div>
+
+            <!-- Right: Ledger Display -->
+            <div class="card">
+                <h2>📑 Event Ledger (Locked Chain)</h2>
+
+                <div class="event-log" id="eventLog">
+                    <p style="color: #6b7280; text-align: center; padding: 1rem;">Click "Generate Ledger" to create events</p>
+                </div>
+
+                <div class="verification-box" id="verificationBox" style="display: none;">
+                    <div class="verification-item">
+                        <div class="check-icon pass" id="chainCheck">✓</div>
+                        <span id="chainText">Chain Integrity: UNBROKEN</span>
+                    </div>
+                    <div class="verification-item">
+                        <div class="check-icon pass" id="tampervCheck">✓</div>
+                        <span id="tamperText">Tamper-Proof: Yes</span>
+                    </div>
+                    <div class="verification-item">
+                        <div class="check-icon pass" id="courtCheck">✓</div>
+                        <span id="courtText">Court-Admissible: Yes</span>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-danger" onclick="tamperEvent()">⚠️ TRY TO TAMPER (Edit Event #5)</button>
+                    <button class="btn-secondary" onclick="resetDemo()">Reset Demo</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Section -->
+        <div class="comparison-section">
+            <h2>💰 Cost & Complexity Comparison</h2>
+
+            <table class="comparison-table">
+                <tr>
+                    <th>Aspect</th>
+                    <th>Blockchain</th>
+                    <th>Praman (Merkle)</th>
+                </tr>
+                <tr>
+                    <td><strong>Monthly Cost</strong></td>
+                    <td><span class="highlight">₹5-50 Lakhs</span></td>
+                    <td><span class="highlight">₹10,000</span> (50x cheaper)</td>
+                </tr>
+                <tr>
+                    <td><strong>Response Time</strong></td>
+                    <td>30 seconds (mining)</td>
+                    <td>10 milliseconds (instant)</td>
+                </tr>
+                <tr>
+                    <td><strong>Operational Team</strong></td>
+                    <td>5-10 people</td>
+                    <td>0 people (automated)</td>
+                </tr>
+                <tr>
+                    <td><strong>Regulatory Approval</strong></td>
+                    <td>Unknown (new tech)</td>
+                    <td>✓ Known (proven in India)</td>
+                </tr>
+                <tr>
+                    <td><strong>Court-Admissible</strong></td>
+                    <td>Uncertain</td>
+                    <td>✓ Yes (BSA §63 compliant)</td>
+                </tr>
+                <tr>
+                    <td><strong>Solve DPDP §12 Erasure</strong></td>
+                    <td>No (immutable = can't erase)</td>
+                    <td>✓ Yes (hash principal, erase data)</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Key Insight Section -->
+        <div class="comparison-section" style="border-left: 4px solid #059669; background: #f0fdf4;">
+            <h2>💡 Key Insight</h2>
+            <p style="font-size: 1rem; color: #374151;">
+                <strong>Blockchain</strong> solves the wrong problem. It provides consensus (useful for cryptocurrencies).
+                Banks don't need consensus—they need <strong>tamper-evidence</strong>.
+            </p>
+            <p style="font-size: 1rem; color: #374151; margin-top: 1rem;">
+                <strong>Praman</strong> solves the right problem. It proves AI decisions are fair, auditable, and can't be secretly edited.
+                Regulators can verify it in 2 minutes. Costs 50x less. Works 3,000x faster.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let isTampered = false;
+
+        function generateLedger() {
+            const decision = document.getElementById('decision').value;
+            const eventLog = document.getElementById('eventLog');
+            const verificationBox = document.getElementById('verificationBox');
+
+            isTampered = false;
+
+            const events = [
+                { time: '2:30 PM', text: 'Customer grants consent to AI evaluation' },
+                { time: '2:31 PM', text: 'AI system assigned autonomy tier: ACT_BOUNDED' },
+                { time: '2:32 PM', text: 'Risk evaluation complete: Score = 0.62 (threshold: 0.65)' },
+                { time: '2:33 PM', text: 'Autonomy check: ACT_BOUNDED tier can approve loans' },
+                { time: '2:34 PM', text: `DECISION: ${decision} — Customer qualifies`, isDecision: true },
+                { time: '2:35 PM', text: 'Loan disbursed to customer account' }
+            ];
+
+            eventLog.innerHTML = events.map((e, i) => `
+                <div class="event-item" id="event-${i}">
+                    <div class="event-icon ok">✓</div>
+                    <div class="event-time">${e.time}</div>
+                    <div class="event-text ${e.isDecision ? 'decision' : ''}">${e.text}</div>
+                </div>
+            `).join('');
+
+            updateVerification(false);
+            verificationBox.style.display = 'block';
+        }
+
+        function updateVerification(tampered) {
+            const verificationBox = document.getElementById('verificationBox');
+
+            if (tampered) {
+                verificationBox.className = 'verification-box fail';
+
+                document.getElementById('chainCheck').className = 'check-icon fail';
+                document.getElementById('chainText').textContent = 'Chain Integrity: BROKEN ❌ (Event 5 was edited)';
+
+                document.getElementById('tampervCheck').className = 'check-icon fail';
+                document.getElementById('tamperText').textContent = 'Tamper-Proof: No (Tampering detected)';
+
+                document.getElementById('courtCheck').className = 'check-icon fail';
+                document.getElementById('courtText').textContent = 'Court-Admissible: No (Evidence compromised)';
+            } else {
+                verificationBox.className = 'verification-box';
+
+                document.getElementById('chainCheck').className = 'check-icon pass';
+                document.getElementById('chainText').textContent = 'Chain Integrity: UNBROKEN';
+
+                document.getElementById('tampervCheck').className = 'check-icon pass';
+                document.getElementById('tamperText').textContent = 'Tamper-Proof: Yes (any edit breaks the chain)';
+
+                document.getElementById('courtCheck').className = 'check-icon pass';
+                document.getElementById('courtText').textContent = 'Court-Admissible: Yes';
+            }
+        }
+
+        function tamperEvent() {
+            if (!document.getElementById('eventLog').innerHTML.includes('event-0')) {
+                alert('Generate Ledger first');
+                return;
+            }
+
+            isTampered = true;
+
+            const event5 = document.getElementById('event-4');
+            if (event5) {
+                event5.querySelector('.event-icon').className = 'event-icon fail';
+                event5.querySelector('.event-icon').textContent = '✗';
+                event5.querySelector('.event-text').className = 'event-text edited';
+                event5.querySelector('.event-text').textContent = 'DECISION: DENIED ← TAMPERED (Changed from APPROVED)';
+            }
+
+            updateVerification(true);
+        }
+
+        function resetDemo() {
+            document.getElementById('eventLog').innerHTML = '<p style="color: #6b7280; text-align: center; padding: 1rem;">Click "Generate Ledger" to create events</p>';
+            document.getElementById('verificationBox').style.display = 'none';
+            isTampered = false;
+        }
+    </script>
+</body>
+</html>

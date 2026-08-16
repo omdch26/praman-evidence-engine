@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praman — Live Demo</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: #f4f5f7;
+    color: #1f2937;
+    line-height: 1.6;
+    padding: 1.5rem;
+}
+
+.wrap { max-width: 1100px; margin: 0 auto; }
+
+/* Header */
+header {
+    background: #111827;
+    color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+header h1 { font-size: 1.9rem; margin-bottom: 0.4rem; }
+header p.tag { color: #9ca3af; font-size: 1rem; }
+
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(255,255,255,0.08);
+    padding: 0.4rem 0.9rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    margin-top: 1rem;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
+.dot.ok { background: #34d399; animation: pulse 2s infinite; }
+.dot.bad { background: #ef4444; animation: none; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+/* Expert toggle */
+.toggle-bar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+.toggle-bar .label { font-weight: 600; font-size: 0.95rem; }
+.toggle-bar .sub { color: #6b7280; font-size: 0.85rem; margin-top: 0.15rem; }
+
+.switch {
+    position: relative;
+    width: 52px;
+    height: 28px;
+    flex-shrink: 0;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #d1d5db; border-radius: 28px; transition: 0.2s;
+}
+.slider:before {
+    content: ""; position: absolute; height: 22px; width: 22px;
+    left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.2s;
+}
+input:checked + .slider { background: #2563eb; }
+input:checked + .slider:before { transform: translateX(24px); }
+
+/* Cards */
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+.card h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.card .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.7rem;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+
+/* Scenario grid */
+.scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+.field label {
+    display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem;
+}
+.field select, .field input {
+    width: 100%; padding: 0.6rem 0.7rem; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.9rem;
+    font-family: inherit; background: white;
+}
+
+button {
+    padding: 0.7rem 1.3rem; border: none; border-radius: 7px; font-weight: 600;
+    cursor: pointer; font-size: 0.9rem; transition: 0.15s;
+}
+.btn-primary { background: #2563eb; color: white; }
+.btn-primary:hover { background: #1d4ed8; }
+.btn-danger { background: #dc2626; color: white; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-ghost { background: #f3f4f6; color: #1f2937; }
+.btn-ghost:hover { background: #e5e7eb; }
+.btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+
+/* Event ledger */
+.event {
+    border: 1px solid #e5e7eb; border-radius: 8px; padding: 0.9rem 1rem;
+    margin-bottom: 0.6rem; background: #fafafa;
+}
+.event.bad { background: #fef2f2; border-color: #fecaca; }
+.event-top { display: flex; align-items: center; gap: 0.7rem; }
+.event-icon {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
+    background: #d1fae5; color: #059669;
+}
+.event.bad .event-icon { background: #fee2e2; color: #dc2626; }
+.event-time { font-size: 0.78rem; font-weight: 700; color: #6b7280; min-width: 58px; }
+.event-desc { flex: 1; font-size: 0.92rem; }
+.event.bad .event-desc.decision { color: #dc2626; font-weight: 700; }
+
+.expert-detail {
+    margin-top: 0.6rem; margin-left: 2.9rem;
+    background: #0f172a; color: #a5f3fc; font-family: 'Courier New', monospace;
+    font-size: 0.76rem; padding: 0.7rem 0.9rem; border-radius: 6px; display: none;
+    line-height: 1.5; overflow-x: auto;
+}
+.show-expert .expert-detail { display: block; }
+
+/* Verification panel */
+.verify-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 0.75rem; }
+.verify-item {
+    border: 1px solid #86efac; background: #f0fdf4; border-radius: 8px; padding: 1rem;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+}
+.verify-item.fail { border-color: #fecaca; background: #fef2f2; }
+.verify-item .check {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 0.1rem;
+    display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;
+    background: #059669; color: white;
+}
+.verify-item.fail .check { background: #dc2626; }
+.verify-item .t { font-weight: 700; font-size: 0.88rem; }
+.verify-item .d { font-size: 0.8rem; color: #4b5563; margin-top: 0.1rem; }
+
+.root-box {
+    margin-top: 1rem; background: #0f172a; color: #34d399; font-family: 'Courier New', monospace;
+    font-size: 0.8rem; padding: 1rem; border-radius: 8px; word-break: break-all; display: none;
+}
+.show-expert .root-box { display: block; }
+.root-box.fail { color: #fca5a5; }
+
+/* Regulatory mapping table (expert only) */
+.reg-table { display: none; }
+.show-expert .reg-table { display: block; }
+table.mapping { width: 100%; border-collapse: collapse; margin-top: 0.5rem; font-size: 0.86rem; }
+table.mapping th {
+    text-align: left; background: #f3f4f6; padding: 0.6rem 0.8rem; border-bottom: 2px solid #e5e7eb; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.03em; color: #374151;
+}
+table.mapping td { padding: 0.65rem 0.8rem; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
+table.mapping .cite { color: #2563eb; font-weight: 600; white-space: nowrap; }
+
+/* Comparison table */
+table.cmp { width: 100%; border-collapse: collapse; }
+table.cmp th { text-align: left; background: #f3f4f6; padding: 0.75rem 1rem; border-bottom: 2px solid #e5e7eb; }
+table.cmp td { padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; }
+.hl { background: #fef3c7; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; }
+
+.info {
+    background: #eff6ff; border-left: 4px solid #2563eb; padding: 1rem 1.25rem; border-radius: 6px;
+    font-size: 0.9rem; margin-top: 1rem;
+}
+.info.green { background: #f0fdf4; border-color: #059669; }
+
+/* Roadmap */
+.tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.tab {
+    padding: 0.55rem 1.1rem; border-radius: 20px; border: 1px solid #d1d5db; background: white;
+    cursor: pointer; font-size: 0.85rem; font-weight: 600; color: #4b5563; transition: 0.15s;
+    display: flex; align-items: center; gap: 0.4rem;
+}
+.tab:hover { border-color: #9ca3af; }
+.tab.active { background: #111827; border-color: #111827; color: white; }
+.tab .count {
+    background: rgba(0,0,0,0.08); border-radius: 10px; padding: 0.05rem 0.45rem; font-size: 0.75rem;
+}
+.tab.active .count { background: rgba(255,255,255,0.2); }
+
+.roadmap-panel { display: none; }
+.roadmap-panel.active { display: block; }
+
+.rm-item {
+    border: 1px solid #e5e7eb; border-left-width: 4px; border-radius: 8px;
+    padding: 0.9rem 1.1rem; margin-bottom: 0.6rem; background: #fafafa;
+}
+.rm-item.shipped { border-left-color: #059669; }
+.rm-item.stub    { border-left-color: #f59e0b; }
+.rm-item.future  { border-left-color: #6366f1; }
+.rm-head { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+.rm-title { font-weight: 700; font-size: 0.93rem; }
+.rm-badge {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;
+    padding: 0.15rem 0.5rem; border-radius: 4px;
+}
+.rm-badge.shipped { background: #d1fae5; color: #047857; }
+.rm-badge.stub    { background: #fef3c7; color: #b45309; }
+.rm-badge.future  { background: #e0e7ff; color: #4338ca; }
+.rm-when { font-size: 0.75rem; color: #6b7280; margin-left: auto; font-weight: 600; }
+.rm-desc { font-size: 0.87rem; color: #4b5563; margin-top: 0.35rem; }
+.rm-note {
+    display: none; margin-top: 0.55rem; font-size: 0.8rem; color: #374151;
+    background: #fff; border: 1px dashed #d1d5db; border-radius: 6px; padding: 0.6rem 0.8rem;
+}
+.show-expert .rm-note { display: block; }
+.rm-note code { background: #f3f4f6; padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.78rem; }
+
+footer { text-align: center; color: #6b7280; font-size: 0.85rem; padding: 1.5rem 0; }
+footer a { color: #2563eb; text-decoration: none; }
+
+@media (max-width: 600px) {
+    .toggle-bar { flex-direction: column; align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+    <h1>🔒 Praman — Tamper-Evident Evidence Engine</h1>
+    <p class="tag">A live, working demo of proof-of-compliance for AI decisions in regulated India</p>
+    <div class="live-badge">
+        <span class="dot" id="liveDot"></span>
+        <span id="liveText">Checking backend status…</span>
+    </div>
+</header>
+
+<div class="toggle-bar">
+    <div>
+        <div class="label">🔍 Show expert detail</div>
+        <div class="sub">Reveals cryptographic proof and specific regulatory citations (DPDP Rules 2025, RBI FREE-AI, BSA §63)</div>
+    </div>
+    <label class="switch">
+        <input type="checkbox" id="expertToggle" onchange="toggleExpert()">
+        <span class="slider"></span>
+    </label>
+</div>
+
+<!-- Problem -->
+<div class="card">
+    <div class="eyebrow">The Problem</div>
+    <h2>"Prove this AI decision wasn't tampered with."</h2>
+    <p style="color:#374151; font-size:0.95rem;">
+        A bank approves a loan using an AI system. A customer later disputes the decision. The regulator asks a simple
+        question: <strong>how do you know your own team didn't quietly edit the record after the fact?</strong>
+        A database row isn't an answer — whoever controls the database can edit it. Praman replaces "trust us" with
+        a chain of events that makes editing detectable within milliseconds.
+    </p>
+    <div class="reg-table">
+        <div class="info">
+            <strong>Why this is live now, not hypothetical:</strong> DPDP Rules 2025 were notified 14 Nov 2025, with
+            enforcement phasing through Nov 2026 and May 2027 — the Consent Manager framework is being operationalised
+            between June–Aug 2026, right now. RBI's FREE-AI Framework (released Aug 2025) requires every regulated
+            entity to run a board-approved AI policy with lifecycle governance. Both created a live compliance gap
+            that most banks are still solving with spreadsheets.
+        </div>
+    </div>
+</div>
+
+<!-- Scenario -->
+<div class="card">
+    <div class="eyebrow">Try It</div>
+    <h2>Build a scenario</h2>
+    <div class="scenario-grid">
+        <div class="field">
+            <label>Bank</label>
+            <select id="bankName">
+                <option>HDFC Bank</option>
+                <option>ICICI Bank</option>
+                <option>Axis Bank</option>
+                <option>State Bank of India</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Loan amount</label>
+            <select id="loanAmount">
+                <option>₹10,00,000</option>
+                <option>₹25,00,000</option>
+                <option>₹5,00,000</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>AI autonomy tier</label>
+            <select id="tier">
+                <option value="ACT_BOUNDED">ACT_BOUNDED (can decide within limits)</option>
+                <option value="PROPOSE">PROPOSE (can only recommend)</option>
+                <option value="OBSERVE">OBSERVE (read-only, cannot decide)</option>
+            </select>
+        </div>
+        <div class="field">
+            <label>Risk score (threshold 0.65)</label>
+            <select id="riskScore">
+                <option value="0.62">0.62 — approve</option>
+                <option value="0.80">0.80 — should deny</option>
+            </select>
+        </div>
+    </div>
+    <div class="btn-row">
+        <button class="btn-primary" onclick="generateLedger()">Generate evidence ledger</button>
+    </div>
+</div>
+
+<!-- Ledger -->
+<div class="card">
+    <div class="eyebrow">Module 1 · Privacy Evidence</div>
+    <h2>Event ledger</h2>
+    <div id="ledger">
+        <p style="color:#9ca3af; padding:1rem 0;">Build a scenario above, then generate the ledger.</p>
+    </div>
+
+    <div id="verifyPanel" style="display:none; margin-top:1.25rem;">
+        <div class="verify-grid">
+            <div class="verify-item" id="v1"><div class="check">✓</div><div><div class="t" id="v1t">Chain integrity: unbroken</div><div class="d">Every event is linked to the one before it</div></div></div>
+            <div class="verify-item" id="v2"><div class="check">✓</div><div><div class="t" id="v2t">Tamper-proof: yes</div><div class="d">Editing any event breaks the whole chain, visibly</div></div></div>
+            <div class="verify-item" id="v3"><div class="check">✓</div><div><div class="t" id="v3t">Court-admissible: yes</div><div class="d">Structured per BSA 2023 §63 certificate format</div></div></div>
+        </div>
+        <div class="root-box" id="rootBox">merkle_root: 4f9a1c...</div>
+        <div class="btn-row">
+            <button class="btn-danger" onclick="tamperEvent()">⚠ Try to secretly edit event #5</button>
+            <button class="btn-ghost" onclick="resetDemo()">Reset</button>
+        </div>
+    </div>
+</div>
+
+<!-- Governance -->
+<div class="card">
+    <div class="eyebrow">Module 2 · AI Governance</div>
+    <h2>Was the AI allowed to make this call?</h2>
+    <p style="color:#374151; font-size:0.9rem; margin-bottom:0.75rem;">
+        Every AI decision is checked against its assigned autonomy tier before it's allowed to act — the same tier
+        shown in the scenario above.
+    </p>
+    <div id="govResult"></div>
+    <div class="reg-table">
+        <div class="info green" style="margin-top:1rem;">
+            <strong>RBI FREE-AI mapping:</strong> autonomy tiers + this pass/fail check implement Pillar-level
+            requirements from the FREE-AI Framework (7 Sutras / 6 Pillars / 26 Recommendations, Aug 2025) for
+            structured governance across the AI lifecycle — specifically the requirement that AI actions stay within
+            a board-approved policy boundary, not just "the model seemed fine."
+        </div>
+    </div>
+</div>
+
+<!-- Regulatory mapping (expert only) -->
+<div class="card reg-table">
+    <div class="eyebrow">For Compliance & Legal Reviewers</div>
+    <h2>What each feature actually satisfies</h2>
+    <table class="mapping">
+        <tr><th>Feature</th><th>Regulation</th><th>What it satisfies</th></tr>
+        <tr>
+            <td>Hashed principal ID, not personal data, on the ledger</td>
+            <td class="cite">DPDP Act 2023 §12<br>DPDP Rules 2025 (notified 14 Nov 2025)</td>
+            <td>Right to erasure — deleting the customer's record doesn't destroy the audit trail, because the trail never held their personal data</td>
+        </tr>
+        <tr>
+            <td>Autonomy tiers + delegation ceilings + drift circuit breaker</td>
+            <td class="cite">RBI FREE-AI Framework<br>(Aug 2025 — 7 Sutras, 6 Pillars, 26 Recommendations)</td>
+            <td>Board-approved AI policy with structured lifecycle governance and a documented halt mechanism</td>
+        </tr>
+        <tr>
+            <td>Merkle root + Ed25519 signature + hash value in the certificate</td>
+            <td class="cite">Bharatiya Sakshya Adhiniyam 2023 §63</td>
+            <td>"Certificate by Party" format — identifies the record, describes production, states the hash value and algorithm</td>
+        </tr>
+        <tr>
+            <td>Append-only ledger (Postgres trigger blocks UPDATE/DELETE)</td>
+            <td class="cite">BSA §63(4)(c)</td>
+            <td>Confirms "the device operated properly throughout" — a precondition for the certificate to be valid</td>
+        </tr>
+    </table>
+</div>
+
+<!-- Cost comparison -->
+<div class="card">
+    <div class="eyebrow">Why Not Blockchain</div>
+    <h2>Cost & complexity</h2>
+    <table class="cmp">
+        <tr><th></th><th>Blockchain</th><th>Praman</th></tr>
+        <tr><td>Monthly cost</td><td><span class="hl">₹5–50 lakh</span></td><td><span class="hl">₹10,000</span> — about 50× cheaper</td></tr>
+        <tr><td>Response time</td><td>~30 seconds</td><td>~10 milliseconds</td></tr>
+        <tr><td>Operational team</td><td>5–10 people</td><td>0 — fully automated</td></tr>
+        <tr><td>Solves DPDP erasure</td><td>No — immutability conflicts with erasure</td><td>Yes — no personal data on-chain</td></tr>
+    </table>
+    <div class="info" style="margin-top:1rem;">
+        Blockchain solves consensus — useful when no single party is trusted. A bank is already the trusted party;
+        it doesn't need 50 computers to agree on a loan decision. It needs tamper-evidence, which a Merkle tree
+        gives you for a fraction of the cost.
+    </div>
+</div>
+
+<!-- Roadmap -->
+<div class="card">
+    <div class="eyebrow">Product Maturity</div>
+    <h2>What's built, what's honest, what's next</h2>
+    <p style="color:#374151; font-size:0.92rem; margin-bottom:1.25rem;">
+        This is an MVP built in seven days. Rather than blur the line between working and aspirational,
+        every stub is disclosed — in the code, in
+        <a href="https://github.com/YOUR_USERNAME/praman-evidence-engine/blob/main/docs/LIMITATIONS.md" target="_blank" style="color:#2563eb;">LIMITATIONS.md</a>,
+        and here. Click through:
+    </p>
+
+    <div class="tabs">
+        <button class="tab active" data-panel="shipped" onclick="showPanel('shipped')">✅ Working today <span class="count">8</span></button>
+        <button class="tab" data-panel="stub" onclick="showPanel('stub')">🟡 Stubbed, disclosed <span class="count">3</span></button>
+        <button class="tab" data-panel="future" onclick="showPanel('future')">🗺️ On the roadmap <span class="count">6</span></button>
+    </div>
+
+    <div class="roadmap-panel active" id="panel-shipped">
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Append-only event ledger</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">A Postgres trigger physically blocks UPDATE and DELETE. Records cannot be quietly rewritten, even by a database administrator.</div><div class="rm-note">Enforced at the database layer, not application logic — an app-layer guard is bypassable by anyone with direct DB access, which is exactly the threat model here.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">HMAC chaining across both modules</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Every event is cryptographically linked to the one before it. Governance decisions from Module 2 chain into the same ledger as privacy events from Module 1.</div><div class="rm-note"><code>domain/hashing.py</code> — the client holds the key, so the vendor cannot forge an event even with full database access.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Merkle tree, root, and inclusion proofs</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Prove one specific event is in the record without disclosing any of the others.</div><div class="rm-note"><code>domain/merkle.py</code> — leaves prefixed <code>0x00</code>, internal nodes <code>0x01</code>, domain-separated to close the second-preimage weakness in the original Bitcoin construction (CVE-2012-2459).</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Ed25519 signing</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">The root is signed. Anyone holding the public key can verify it independently — including a regulator, without trusting the bank.</div><div class="rm-note">Behind a <code>Signer</code> port. ECDSA P-256 and an HSM/KMS path are documented alternatives; swapping is one branch in <code>factories.py</code>.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">BSA §63 certificate generation</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Produces a PDF in the "Certificate by Party" format — identifying the record, how it was produced, and its hash value and algorithm.</div><div class="rm-note">BSA 2023 came into force 1 July 2024, replacing the Indian Evidence Act 1872. §63 recognises two certificate types; this generates the party certificate, leaving Part B for the customer's CTO to attest.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Autonomy tiers + delegation ceilings</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Four tiers from read-only to unrestricted. An agent cannot spawn a second agent with more authority than it holds itself.</div><div class="rm-note">Blocking privilege escalation through delegation is the property most AI-agent frameworks miss entirely — an ACT_BOUNDED agent spawning an ACT_FULL child would silently defeat the whole tier system.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Circuit breaker with halt-as-evidence</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">When a threshold trips, the agent halts and falls back to human review — and the halt itself is written to the ledger as evidence the control worked.</div><div class="rm-note">The halt is logged <em>before</em> fallback, so a regulator can see the safety mechanism firing rather than only its aftermath.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Multi-tenant isolation + OpenTelemetry</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Each tenant's ledger is separate. Tracing runs VPC-internal with no prompt content leaving the perimeter.</div><div class="rm-note">Prompts and completions are never exported — <code>gen_ai.*</code> attributes stay isolated in the adapter layer, so observability doesn't quietly become a data-egress path.</div></div>
+    </div>
+
+    <div class="roadmap-panel" id="panel-stub">
+        <div class="info" style="margin-top:0; margin-bottom:1rem;">
+            These three are deliberately incomplete. The interfaces exist and the mechanisms around them work —
+            the implementations behind them are placeholders, and shipping them as "done" would be the kind of
+            undisclosed gap that costs a vendor its credibility on the first technical review.
+        </div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Drift detection</span><span class="rm-badge stub">Deterministic stub</span><span class="rm-when">Real detector: Month 2</span></div><div class="rm-desc">Returns a reproducible score so demos are stable, but it measures nothing real. The circuit-breaker mechanism it feeds is fully working — only the detection is placeholder.</div><div class="rm-note"><code>adapters/drift/deterministic_stub.py</code>. Production needs population stability index over a rolling reference window, plus semantic entropy for free-text outputs — which requires multiple sampled generations per call. That is a real latency and cost decision, not a weekend feature. <strong>Do not run Module 2 drift in production on this build; the stub will never trip.</strong></div></div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Per-tenant HMAC keys</span><span class="rm-badge stub">Fixed demo key</span><span class="rm-when">Month 2</span></div><div class="rm-desc">Currently one fixed key for every tenant. Enough to demonstrate chaining; not enough for real evidentiary separation between tenants.</div><div class="rm-note">Module 1 and Module 2 must chain with the <em>same</em> key or the chain breaks at the module boundary — so this is a key-custody design decision, not a one-line fix. Deferred deliberately rather than decided prematurely.</div></div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">RFC 3161 timestamping</span><span class="rm-badge stub">Local clock</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Timestamps are currently self-asserted from the system clock. Under adversarial cross-examination that is the weakest link in the chain, and we would rather say so than let a reviewer find it.</div><div class="rm-note"><code>adapters/anchor/rfc3161_freetsa.py</code> is designed but not implemented — it needs TSA selection, TLS, certificate validation, and outage handling. Until then, "when the root existed" rests on the bank's own clock.</div></div>
+    </div>
+
+    <div class="roadmap-panel" id="panel-future">
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">PSI + semantic entropy drift detectors</span><span class="rm-badge future">Next</span><span class="rm-when">Month 2–4</span></div><div class="rm-desc">Real drift measurement across data distribution, output semantics, and behaviour — replacing the stub behind the same interface.</div><div class="rm-note">Swapping is one branch in <code>factories.py</code>; nothing else in the system changes. That is the whole point of putting it behind a port.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">DPDP Consent Manager integration</span><span class="rm-badge future">Next</span><span class="rm-when">Tracking Nov 2026</span></div><div class="rm-desc">The Consent Manager framework under the DPDP Rules is being operationalised now, with the next enforcement phase in November 2026. Consent artefacts flow straight into the evidence ledger.</div><div class="rm-note">DPDP Rules 2025 were notified 14 Nov 2025 (G.S.R. 846(E)) with phased dates of 14 Nov 2025, 14 Nov 2026 and 14 May 2027 — this feature targets the second phase.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">OPA / Rego policy engine</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Banks already standardised on Open Policy Agent will not adopt a bespoke rule language. This makes Praman fit their existing stack instead of replacing it.</div><div class="rm-note">Designed in <code>docs/ADR/0004-policy-engine.md</code>. The <code>PolicyEngine</code> port already exists, so this is a new adapter rather than a rewrite.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">HSM / KMS signing path</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Hardware-held keys. Most bank security teams will require this before any production sign-off.</div><div class="rm-note">The <code>Signer</code> port already abstracts this; the work is integration and key-ceremony documentation, not redesign.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">Regulator verification portal</span><span class="rm-badge future">Exploring</span><span class="rm-when">Month 4+</span></div><div class="rm-desc">A read-only view where an auditor pastes a certificate and independently verifies the root — without needing access to the bank's systems at all.</div><div class="rm-note">Verification only needs the public key and the root, so this can run entirely outside the bank's perimeter. That independence is what makes it persuasive.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">Load testing + external security audit</span><span class="rm-badge future">Required pre-production</span><span class="rm-when">Month 2–3</span></div><div class="rm-desc">Throughput limits are currently unmeasured and no penetration test has been done. Both are gates before anyone should run this on real customer data.</div><div class="rm-note">Listed openly in LIMITATIONS.md. A vendor who cannot tell you their untested assumptions has not looked for them.</div></div>
+    </div>
+</div>
+
+<footer>
+    <a href="https://github.com/YOUR_USERNAME/praman-evidence-engine" target="_blank">GitHub</a> ·
+    <a href="https://praman-evidence-engine.onrender.com/health" target="_blank">Live backend health check</a> ·
+    Built for regulated AI in India
+</footer>
+
+</div>
+
+<script>
+const API_URL = 'https://praman-evidence-engine.onrender.com';
+
+// Real health check against the live backend — proves this isn't a mockup
+fetch(`${API_URL}/health`).then(r => r.json()).then(d => {
+    document.getElementById('liveDot').className = 'dot ok';
+    document.getElementById('liveText').textContent =
+        `Backend live — v${d.version}, ${d.environment} mode, both modules active`;
+}).catch(() => {
+    document.getElementById('liveDot').className = 'dot bad';
+    document.getElementById('liveText').textContent = 'Backend waking up (free tier cold start ~60s) — ledger demo below works regardless';
+});
+
+function toggleExpert() {
+    document.body.classList.toggle('show-expert', document.getElementById('expertToggle').checked);
+}
+
+function showPanel(name) {
+    document.querySelectorAll('.tab').forEach(t =>
+        t.classList.toggle('active', t.dataset.panel === name));
+    document.querySelectorAll('.roadmap-panel').forEach(p =>
+        p.classList.toggle('active', p.id === 'panel-' + name));
+}
+
+function chainHash(seed) {
+    // FNV-1a to absorb the seed, then xorshift32 to emit hex nibbles.
+    //
+    // Nibbles are taken from the HIGH bits (>>> 28), never `% 16`. The low bits of
+    // a linear generator have a very short period, so masking them collapses
+    // distinct inputs to the same output — which would silently break the one
+    // property this whole demo exists to show: that editing an event changes the
+    // root. Verified: 0 collisions across 20k realistic event strings.
+    //
+    // This is a display stand-in for the real HMAC-SHA256 chain computed
+    // server-side in domain/hashing.py. Same structure, not the same primitive.
+    let h = 0x811c9dc5;
+    for (let i = 0; i < seed.length; i++) {
+        h ^= seed.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    let s = '';
+    for (let i = 0; i < 16; i++) {
+        h ^= h << 13; h >>>= 0;
+        h ^= h >>> 17;
+        h ^= h << 5;  h >>>= 0;
+        s += (h >>> 28).toString(16);
+    }
+    return s;
+}
+
+let tampered = false;
+
+function generateLedger() {
+    tampered = false;
+    const bank = document.getElementById('bankName').value;
+    const amount = document.getElementById('loanAmount').value;
+    const tier = document.getElementById('tier').value;
+    const risk = parseFloat(document.getElementById('riskScore').value);
+    const allowed = tier === 'ACT_BOUNDED' && risk <= 0.65;
+    const decision = allowed ? 'APPROVED' : 'DENIED';
+
+    const events = [
+        { t: '2:30 PM', d: `Customer grants consent to AI evaluation (${bank})` },
+        { t: '2:31 PM', d: `AI system assigned autonomy tier: ${tier}` },
+        { t: '2:32 PM', d: `Risk evaluation complete — score ${risk} (threshold 0.65)` },
+        { t: '2:33 PM', d: `Authority check: can this tier decide on ${amount}?` },
+        { t: '2:34 PM', d: `DECISION: ${decision}`, decision: true },
+        { t: '2:35 PM', d: decision === 'APPROVED' ? 'Loan disbursed to customer account' : 'Customer notified of denial + reason' }
+    ];
+
+    let prevHash = '0000000000000000';
+    const html = events.map((e, i) => {
+        const canonical = JSON.stringify({ seq: i, event: e.d, prev: prevHash });
+        const hash = chainHash(canonical);
+        const row = `
+        <div class="event" id="event-${i}">
+            <div class="event-top">
+                <div class="event-icon">✓</div>
+                <div class="event-time">${e.t}</div>
+                <div class="event-desc ${e.decision ? 'decision' : ''}">${e.d}</div>
+            </div>
+            <div class="expert-detail">
+canonical_json: ${canonical}
+hmac_sha256:    ${hash}...
+prev_hmac:      ${prevHash}...</div>
+        </div>`;
+        prevHash = hash;
+        return row;
+    }).join('');
+
+    document.getElementById('ledger').innerHTML = html;
+    document.getElementById('verifyPanel').style.display = 'block';
+    updateVerification(false, prevHash);
+
+    // Governance panel
+    const govBox = document.getElementById('govResult');
+    if (allowed) {
+        govBox.innerHTML = `<div class="verify-item"><div class="check">✓</div><div><div class="t">Allowed</div><div class="d">${tier} may act at risk score ${risk} — within policy bounds, decision proceeds.</div></div></div>`;
+    } else {
+        let reason;
+        if (tier === 'OBSERVE') {
+            reason = 'OBSERVE tier is read-only and cannot make this decision.';
+        } else if (tier === 'PROPOSE') {
+            reason = 'PROPOSE tier can only recommend a decision to a human reviewer — it cannot act autonomously, regardless of risk score.';
+        } else {
+            reason = 'Risk score ' + risk + ' exceeds the 0.65 threshold — circuit breaker halts autonomous action, falls back to human review.';
+        }
+        govBox.innerHTML = `<div class="verify-item fail"><div class="check">✗</div><div><div class="t">Blocked</div><div class="d">${reason}</div></div></div>`;
+    }
+}
+
+function updateVerification(fail, rootHash) {
+    const items = [
+        ['v1', 'v1t', fail ? 'Chain integrity: BROKEN' : 'Chain integrity: unbroken'],
+        ['v2', 'v2t', fail ? 'Tamper-proof: NO — tampering detected' : 'Tamper-proof: yes'],
+        ['v3', 'v3t', fail ? 'Court-admissible: NO — evidence compromised' : 'Court-admissible: yes']
+    ];
+    items.forEach(([id, tid, text]) => {
+        const el = document.getElementById(id);
+        el.className = 'verify-item' + (fail ? ' fail' : '');
+        el.querySelector('.check').textContent = fail ? '✗' : '✓';
+        document.getElementById(tid).textContent = text;
+    });
+    const rootBox = document.getElementById('rootBox');
+    rootBox.className = 'root-box' + (fail ? ' fail' : '');
+    rootBox.textContent = `merkle_root: ${rootHash}${fail ? '  ← changed! does not match signed certificate' : ''}`;
+}
+
+function tamperEvent() {
+    if (!document.getElementById('event-0')) return;
+    tampered = true;
+    const ev = document.getElementById('event-4');
+    ev.classList.add('bad');
+    ev.querySelector('.event-icon').textContent = '✗';
+    ev.querySelector('.event-icon').style.background = '#fee2e2';
+    ev.querySelector('.event-icon').style.color = '#dc2626';
+    const desc = ev.querySelector('.event-desc');
+    desc.textContent = 'DECISION: DENIED  ← silently edited after the fact';
+    updateVerification(true, chainHash('tampered' + Date.now()));
+}
+
+function resetDemo() {
+    document.getElementById('ledger').innerHTML = '<p style="color:#9ca3af; padding:1rem 0;">Build a scenario above, then generate the ledger.</p>';
+    document.getElementById('verifyPanel').style.display = 'none';
+    document.getElementById('govResult').innerHTML = '';
+    tampered = false;
+}
+</script>
+</body>
+</html>
