@@ -42,9 +42,19 @@ async def lifespan(app: FastAPI):
     Shutdown: Clean up resources.
     """
     # Startup
-    print(f"🚀 Praman {__version__} starting ({settings.environment} mode)")
-    print(f"📖 Database: {settings.database_url[:50]}...")
-    print(f"🎯 Modules: privacy={settings.module_privacy_enabled}, ai_risk={settings.module_ai_risk_enabled}")
+    #
+    # No emoji in these messages: Windows consoles default to the cp1252
+    # codepage, which cannot encode them, and uvicorn's startup print()
+    # crashes the whole lifespan (and therefore the server) before a single
+    # request is served. Plain ASCII works on every platform this runs on.
+    #
+    # The database host is logged, never the full DATABASE_URL — that string
+    # carries the connection password, and startup logs are not a secret
+    # store.
+    db_host = settings.database_url.split("@")[-1].split("/")[0]
+    print(f"Praman {__version__} starting ({settings.environment} mode)")
+    print(f"Database host: {db_host}")
+    print(f"Modules: privacy={settings.module_privacy_enabled}, ai_risk={settings.module_ai_risk_enabled}")
 
     # Initialize OpenTelemetry (optional; disabled by default in development)
     try:
@@ -54,20 +64,20 @@ async def lifespan(app: FastAPI):
             service_name=settings.otel_service_name,
             environment=settings.otel_environment,
         )
-        print(f"📡 OTel: {'enabled' if settings.otel_enabled else 'disabled'}")
+        print(f"OTel: {'enabled' if settings.otel_enabled else 'disabled'}")
     except Exception as e:
-        print(f"⚠️ OTel initialization warning: {e}")
+        print(f"OTel initialization warning: {e}")
 
     # Initialize database (run migrations)
     try:
         init_database()
     except Exception as e:
-        print(f"⚠️ Database initialization warning: {e}")
+        print(f"Database initialization warning: {e}")
 
     yield
 
     # Shutdown
-    print("🛑 Praman shutting down")
+    print("Praman shutting down")
 
 
 # Create app
