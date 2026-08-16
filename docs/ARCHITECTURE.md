@@ -213,7 +213,7 @@ docs/
 
 **Responsibility:** Govern agent autonomy and detect operational drift.
 
-**Components (demonstrator; commercial gate applied):**
+**Components (production-ready; commercial gate met, 16 Aug 2026):**
 - `governance_service`: Enforce autonomy tiers and delegation ceilings
 - `drift_service`: Three detectors (PSI, semantic entropy, behavioural)
 - `circuit_breaker`: HITL intervention point

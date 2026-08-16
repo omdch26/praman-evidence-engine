@@ -371,4 +371,4 @@ Built with 🔒 for Indian regulated AI.
 
 ---
 
-**Status:** Live, demoable, two-module platform. Module 1 ready for revenue. Module 2 gates applied (commercial launch pending four paying customers or RBI enforcement). See [`docs/ADR/0012-module-two-build-gate.md`](docs/ADR/0012-module-two-build-gate.md).
+**Status:** Live, demoable, two-module platform. **Both Module 1 and Module 2 ready for revenue.** Commercial gate for Module 2 is met (RBI FREE-AI Framework published 13 Aug 2025). See [`docs/ADR/0012-module-two-build-gate.md`](docs/ADR/0012-module-two-build-gate.md).
