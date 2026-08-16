@@ -282,14 +282,14 @@ footer a { color: #2563eb; text-decoration: none; }
     <p style="color:#374151; font-size:0.95rem;">
         A bank approves a loan using an AI system. A customer later disputes the decision. The regulator asks a simple
         question: <strong>how do you know your own team didn't quietly edit the record after the fact?</strong>
-        A database row isn't an answer — whoever controls the database can edit it. Praman replaces "trust us" with
+        A database row isn't an answer. Whoever controls the database can edit it. Praman replaces "trust us" with
         a chain of events that makes editing detectable within milliseconds.
     </p>
     <div class="reg-table">
         <div class="info">
             <strong>Why this is live now, not hypothetical:</strong> DPDP Rules 2025 were notified 14 Nov 2025, with
-            enforcement phasing through Nov 2026 and May 2027 — the Consent Manager framework is being operationalised
-            between June–Aug 2026, right now. RBI's FREE-AI Framework (released Aug 2025) requires every regulated
+            enforcement phasing through Nov 2026 and May 2027. The Consent Manager framework is being operationalised
+            between June and Aug 2026, right now. RBI's FREE-AI Framework, released Aug 2025, requires every regulated
             entity to run a board-approved AI policy with lifecycle governance. Both created a live compliance gap
             that most banks are still solving with spreadsheets.
         </div>
@@ -366,16 +366,16 @@ footer a { color: #2563eb; text-decoration: none; }
     <div class="eyebrow">Module 2 · AI Governance</div>
     <h2>Was the AI allowed to make this call?</h2>
     <p style="color:#374151; font-size:0.9rem; margin-bottom:0.75rem;">
-        Every AI decision is checked against its assigned autonomy tier before it's allowed to act — the same tier
+        Every AI decision is checked against its assigned autonomy tier before it's allowed to act. That's the same tier
         shown in the scenario above.
     </p>
     <div id="govResult"></div>
     <div class="reg-table">
         <div class="info green" style="margin-top:1rem;">
-            <strong>RBI FREE-AI mapping:</strong> autonomy tiers + this pass/fail check implement Pillar-level
+            <strong>RBI FREE-AI mapping:</strong> autonomy tiers plus this pass/fail check implement Pillar-level
             requirements from the FREE-AI Framework (7 Sutras / 6 Pillars / 26 Recommendations, Aug 2025) for
-            structured governance across the AI lifecycle — specifically the requirement that AI actions stay within
-            a board-approved policy boundary, not just "the model seemed fine."
+            structured governance across the AI lifecycle. The requirement is specific: AI actions have to stay within
+            a board-approved policy boundary. "The model seemed fine" isn't a policy.
         </div>
     </div>
 </div>
@@ -421,9 +421,9 @@ footer a { color: #2563eb; text-decoration: none; }
         <tr><td>Solves DPDP erasure</td><td>No — immutability conflicts with erasure</td><td>Yes — no personal data on-chain</td></tr>
     </table>
     <div class="info" style="margin-top:1rem;">
-        Blockchain solves consensus — useful when no single party is trusted. A bank is already the trusted party;
-        it doesn't need 50 computers to agree on a loan decision. It needs tamper-evidence, which a Merkle tree
-        gives you for a fraction of the cost.
+        Blockchain solves consensus, which matters when no single party is trusted. A bank is already the trusted party.
+        It doesn't need 50 computers to agree on a loan decision. It needs tamper-evidence, and a Merkle tree
+        gives you that for a fraction of the cost.
     </div>
 </div>
 
@@ -433,7 +433,7 @@ footer a { color: #2563eb; text-decoration: none; }
     <h2>What's built, what's honest, what's next</h2>
     <p style="color:#374151; font-size:0.92rem; margin-bottom:1.25rem;">
         This is an MVP built in seven days. Rather than blur the line between working and aspirational,
-        every stub is disclosed — in the code, in
+        every stub is disclosed in the code, in
         <a href="https://github.com/YOUR_USERNAME/praman-evidence-engine/blob/main/docs/LIMITATIONS.md" target="_blank" style="color:#2563eb;">LIMITATIONS.md</a>,
         and here. Click through:
     </p>
@@ -445,14 +445,14 @@ footer a { color: #2563eb; text-decoration: none; }
     </div>
 
     <div class="roadmap-panel active" id="panel-shipped">
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Append-only event ledger</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">A Postgres trigger physically blocks UPDATE and DELETE. Records cannot be quietly rewritten, even by a database administrator.</div><div class="rm-note">Enforced at the database layer, not application logic — an app-layer guard is bypassable by anyone with direct DB access, which is exactly the threat model here.</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">HMAC chaining across both modules</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Every event is cryptographically linked to the one before it. Governance decisions from Module 2 chain into the same ledger as privacy events from Module 1.</div><div class="rm-note"><code>domain/hashing.py</code> — the client holds the key, so the vendor cannot forge an event even with full database access.</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Merkle tree, root, and inclusion proofs</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Prove one specific event is in the record without disclosing any of the others.</div><div class="rm-note"><code>domain/merkle.py</code> — leaves prefixed <code>0x00</code>, internal nodes <code>0x01</code>, domain-separated to close the second-preimage weakness in the original Bitcoin construction (CVE-2012-2459).</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Ed25519 signing</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">The root is signed. Anyone holding the public key can verify it independently — including a regulator, without trusting the bank.</div><div class="rm-note">Behind a <code>Signer</code> port. ECDSA P-256 and an HSM/KMS path are documented alternatives; swapping is one branch in <code>factories.py</code>.</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">BSA §63 certificate generation</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Produces a PDF in the "Certificate by Party" format — identifying the record, how it was produced, and its hash value and algorithm.</div><div class="rm-note">BSA 2023 came into force 1 July 2024, replacing the Indian Evidence Act 1872. §63 recognises two certificate types; this generates the party certificate, leaving Part B for the customer's CTO to attest.</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Autonomy tiers + delegation ceilings</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Four tiers from read-only to unrestricted. An agent cannot spawn a second agent with more authority than it holds itself.</div><div class="rm-note">Blocking privilege escalation through delegation is the property most AI-agent frameworks miss entirely — an ACT_BOUNDED agent spawning an ACT_FULL child would silently defeat the whole tier system.</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Circuit breaker with halt-as-evidence</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">When a threshold trips, the agent halts and falls back to human review — and the halt itself is written to the ledger as evidence the control worked.</div><div class="rm-note">The halt is logged <em>before</em> fallback, so a regulator can see the safety mechanism firing rather than only its aftermath.</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Multi-tenant isolation + OpenTelemetry</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Each tenant's ledger is separate. Tracing runs VPC-internal with no prompt content leaving the perimeter.</div><div class="rm-note">Prompts and completions are never exported — <code>gen_ai.*</code> attributes stay isolated in the adapter layer, so observability doesn't quietly become a data-egress path.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Append-only event ledger</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">A Postgres trigger physically blocks UPDATE and DELETE. Records cannot be quietly rewritten, even by a database administrator.</div><div class="rm-note">This is enforced at the database layer, not application logic. An app-layer guard is bypassable by anyone with direct DB access, and that's exactly the threat model here.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">HMAC chaining across both modules</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Every event is cryptographically linked to the one before it. Governance decisions from Module 2 chain into the same ledger as privacy events from Module 1.</div><div class="rm-note"><code>domain/hashing.py</code>. The client holds the key, so the vendor cannot forge an event even with full database access.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Merkle tree, root, and inclusion proofs</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Prove one specific event is in the record without disclosing any of the others.</div><div class="rm-note"><code>domain/merkle.py</code>. Leaves are prefixed <code>0x00</code>, internal nodes <code>0x01</code>, domain-separated to close the second-preimage weakness in the original Bitcoin construction (CVE-2012-2459).</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Ed25519 signing</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">The root is signed. Anyone holding the public key can verify it independently, including a regulator, without trusting the bank.</div><div class="rm-note">Behind a <code>Signer</code> port. ECDSA P-256 and an HSM/KMS path are documented alternatives; swapping is one branch in <code>factories.py</code>.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">BSA §63 certificate generation</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Produces a PDF in the "Certificate by Party" format: identifies the record, how it was produced, and its hash value and algorithm.</div><div class="rm-note">BSA 2023 came into force 1 July 2024, replacing the Indian Evidence Act 1872. §63 recognises two certificate types; this generates the party certificate, leaving Part B for the customer's CTO to attest.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Autonomy tiers + delegation ceilings</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Four tiers from read-only to unrestricted. An agent cannot spawn a second agent with more authority than it holds itself.</div><div class="rm-note">Most AI-agent frameworks miss this entirely: an ACT_BOUNDED agent spawning an ACT_FULL child would silently defeat the whole tier system. Blocking that kind of privilege escalation through delegation is the point.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Circuit breaker with halt-as-evidence</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">When a threshold trips, the agent halts and falls back to human review. The halt itself is written to the ledger as evidence the control worked.</div><div class="rm-note">The halt is logged <em>before</em> fallback, so a regulator can see the safety mechanism firing, not just its aftermath.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Multi-tenant isolation + OpenTelemetry</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Each tenant's ledger is separate. Tracing runs VPC-internal with no prompt content leaving the perimeter.</div><div class="rm-note">Prompts and completions are never exported. <code>gen_ai.*</code> attributes stay isolated in the adapter layer, so observability doesn't quietly become a data-egress path.</div></div>
     </div>
 
     <div class="roadmap-panel" id="panel-stub">
@@ -461,17 +461,17 @@ footer a { color: #2563eb; text-decoration: none; }
             the implementations behind them are placeholders, and shipping them as "done" would be the kind of
             undisclosed gap that costs a vendor its credibility on the first technical review.
         </div>
-        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Drift detection</span><span class="rm-badge stub">Deterministic stub</span><span class="rm-when">Real detector: Month 2</span></div><div class="rm-desc">Returns a reproducible score so demos are stable, but it measures nothing real. The circuit-breaker mechanism it feeds is fully working — only the detection is placeholder.</div><div class="rm-note"><code>adapters/drift/deterministic_stub.py</code>. Production needs population stability index over a rolling reference window, plus semantic entropy for free-text outputs — which requires multiple sampled generations per call. That is a real latency and cost decision, not a weekend feature. <strong>Do not run Module 2 drift in production on this build; the stub will never trip.</strong></div></div>
-        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Per-tenant HMAC keys</span><span class="rm-badge stub">Fixed demo key</span><span class="rm-when">Month 2</span></div><div class="rm-desc">Currently one fixed key for every tenant. Enough to demonstrate chaining; not enough for real evidentiary separation between tenants.</div><div class="rm-note">Module 1 and Module 2 must chain with the <em>same</em> key or the chain breaks at the module boundary — so this is a key-custody design decision, not a one-line fix. Deferred deliberately rather than decided prematurely.</div></div>
-        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">RFC 3161 timestamping</span><span class="rm-badge stub">Local clock</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Timestamps are currently self-asserted from the system clock. Under adversarial cross-examination that is the weakest link in the chain, and we would rather say so than let a reviewer find it.</div><div class="rm-note"><code>adapters/anchor/rfc3161_freetsa.py</code> is designed but not implemented — it needs TSA selection, TLS, certificate validation, and outage handling. Until then, "when the root existed" rests on the bank's own clock.</div></div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Drift detection</span><span class="rm-badge stub">Deterministic stub</span><span class="rm-when">Real detector: Month 2</span></div><div class="rm-desc">Returns a reproducible score so demos are stable, but it measures nothing real. The circuit-breaker mechanism it feeds is fully working. Only the detection is placeholder.</div><div class="rm-note"><code>adapters/drift/deterministic_stub.py</code>. Production needs population stability index over a rolling reference window, plus semantic entropy for free-text outputs, which requires multiple sampled generations per call. That's a real latency and cost decision, not a weekend feature. <strong>Do not run Module 2 drift in production on this build; the stub will never trip.</strong></div></div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Per-tenant HMAC keys</span><span class="rm-badge stub">Fixed demo key</span><span class="rm-when">Month 2</span></div><div class="rm-desc">Currently one fixed key for every tenant. Enough to demonstrate chaining, not enough for real evidentiary separation between tenants.</div><div class="rm-note">Module 1 and Module 2 must chain with the <em>same</em> key or the chain breaks at the module boundary, so this is a key-custody design decision, not a one-line fix. It's deferred deliberately rather than decided prematurely.</div></div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">RFC 3161 timestamping</span><span class="rm-badge stub">Local clock</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Timestamps are currently self-asserted from the system clock. Under adversarial cross-examination that's the weakest link in the chain, and we'd rather say so than let a reviewer find it.</div><div class="rm-note"><code>adapters/anchor/rfc3161_freetsa.py</code> is designed but not implemented. It needs TSA selection, TLS, certificate validation, and outage handling. Until then, "when the root existed" rests on the bank's own clock.</div></div>
     </div>
 
     <div class="roadmap-panel" id="panel-future">
-        <div class="rm-item future"><div class="rm-head"><span class="rm-title">PSI + semantic entropy drift detectors</span><span class="rm-badge future">Next</span><span class="rm-when">Month 2–4</span></div><div class="rm-desc">Real drift measurement across data distribution, output semantics, and behaviour — replacing the stub behind the same interface.</div><div class="rm-note">Swapping is one branch in <code>factories.py</code>; nothing else in the system changes. That is the whole point of putting it behind a port.</div></div>
-        <div class="rm-item future"><div class="rm-head"><span class="rm-title">DPDP Consent Manager integration</span><span class="rm-badge future">Next</span><span class="rm-when">Tracking Nov 2026</span></div><div class="rm-desc">The Consent Manager framework under the DPDP Rules is being operationalised now, with the next enforcement phase in November 2026. Consent artefacts flow straight into the evidence ledger.</div><div class="rm-note">DPDP Rules 2025 were notified 14 Nov 2025 (G.S.R. 846(E)) with phased dates of 14 Nov 2025, 14 Nov 2026 and 14 May 2027 — this feature targets the second phase.</div></div>
-        <div class="rm-item future"><div class="rm-head"><span class="rm-title">OPA / Rego policy engine</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Banks already standardised on Open Policy Agent will not adopt a bespoke rule language. This makes Praman fit their existing stack instead of replacing it.</div><div class="rm-note">Designed in <code>docs/ADR/0004-policy-engine.md</code>. The <code>PolicyEngine</code> port already exists, so this is a new adapter rather than a rewrite.</div></div>
-        <div class="rm-item future"><div class="rm-head"><span class="rm-title">HSM / KMS signing path</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Hardware-held keys. Most bank security teams will require this before any production sign-off.</div><div class="rm-note">The <code>Signer</code> port already abstracts this; the work is integration and key-ceremony documentation, not redesign.</div></div>
-        <div class="rm-item future"><div class="rm-head"><span class="rm-title">Regulator verification portal</span><span class="rm-badge future">Exploring</span><span class="rm-when">Month 4+</span></div><div class="rm-desc">A read-only view where an auditor pastes a certificate and independently verifies the root — without needing access to the bank's systems at all.</div><div class="rm-note">Verification only needs the public key and the root, so this can run entirely outside the bank's perimeter. That independence is what makes it persuasive.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">PSI + semantic entropy drift detectors</span><span class="rm-badge future">Next</span><span class="rm-when">Month 2–4</span></div><div class="rm-desc">Real drift measurement across data distribution, output semantics, and behaviour, replacing the stub behind the same interface.</div><div class="rm-note">Swapping is one branch in <code>factories.py</code>. Nothing else in the system changes, because that's what the port is for.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">DPDP Consent Manager integration</span><span class="rm-badge future">Next</span><span class="rm-when">Tracking Nov 2026</span></div><div class="rm-desc">The Consent Manager framework under the DPDP Rules is being operationalised now, with the next enforcement phase in November 2026. Consent artefacts flow straight into the evidence ledger.</div><div class="rm-note">DPDP Rules 2025 were notified 14 Nov 2025 (G.S.R. 846(E)) with phased dates of 14 Nov 2025, 14 Nov 2026 and 14 May 2027. This feature targets the second phase.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">OPA / Rego policy engine</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Banks already standardised on Open Policy Agent will not adopt a bespoke rule language. This makes Praman fit their existing stack instead of replacing it.</div><div class="rm-note">Designed in <code>docs/ADR/0004-policy-engine.md</code>. The <code>PolicyEngine</code> port already exists, so this is a new adapter, not a rewrite.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">HSM / KMS signing path</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Hardware-held keys. Most bank security teams will require this before any production sign-off.</div><div class="rm-note">The <code>Signer</code> port already abstracts this. The remaining work is integration and key-ceremony documentation, not redesign.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">Regulator verification portal</span><span class="rm-badge future">Exploring</span><span class="rm-when">Month 4+</span></div><div class="rm-desc">A read-only view where an auditor pastes a certificate and independently verifies the root, without needing access to the bank's systems at all.</div><div class="rm-note">Verification only needs the public key and the root, so this can run entirely outside the bank's perimeter, independent of the bank vouching for it.</div></div>
         <div class="rm-item future"><div class="rm-head"><span class="rm-title">Load testing + external security audit</span><span class="rm-badge future">Required pre-production</span><span class="rm-when">Month 2–3</span></div><div class="rm-desc">Throughput limits are currently unmeasured and no penetration test has been done. Both are gates before anyone should run this on real customer data.</div><div class="rm-note">Listed openly in LIMITATIONS.md. A vendor who cannot tell you their untested assumptions has not looked for them.</div></div>
     </div>
 </div>
@@ -513,9 +513,11 @@ function chainHash(seed) {
     //
     // Nibbles are taken from the HIGH bits (>>> 28), never `% 16`. The low bits of
     // a linear generator have a very short period, so masking them collapses
-    // distinct inputs to the same output — which would silently break the one
+    // distinct inputs to the same output. That would silently break the one
     // property this whole demo exists to show: that editing an event changes the
-    // root. Verified: 0 collisions across 20k realistic event strings.
+    // root. This function is not cryptographic and not suitable for real evidence
+    // chains (use HMAC-SHA256 server-side). For this demo, the birthday bound is
+    // ~65k hashes before expected collision; we use ~6/session, well below that.
     //
     // This is a display stand-in for the real HMAC-SHA256 chain computed
     // server-side in domain/hashing.py. Same structure, not the same primitive.
