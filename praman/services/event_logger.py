@@ -36,7 +36,53 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 
 from praman.domain.drift import DriftScore, CircuitBreakerState
+from praman.domain.canonical import canonicalise
+from praman.domain.hashing import compute_hmac_hex
 from praman.persistence.models import Event as EventModel
+
+# STUB: fixed HMAC key, matching api/routers/events.py. Production requires a
+# per-tenant key (see docs/LIMITATIONS.md); Module 2 events must chain with
+# the same key as Module 1 or the ledger's HMAC chain breaks across modules.
+_HMAC_KEY = b"\x00" * 32
+
+
+def _append_event(
+    db: Session,
+    tenant_id: str,
+    module: str,
+    event_type: str,
+    canonical_event: dict,
+) -> EventModel:
+    """
+    Canonicalise, HMAC-chain, and persist an event — shared by every
+    log_* function in this module so Module 2 events chain into the same
+    ledger and HMAC sequence as Module 1's directly-posted events.
+    """
+    previous_event = (
+        db.query(EventModel)
+        .filter(EventModel.tenant_id == tenant_id)
+        .order_by(EventModel.id.desc())
+        .first()
+    )
+    previous_hmac_hex = previous_event.hmac_value if previous_event else None
+
+    canonical_bytes = canonicalise(canonical_event)
+    hmac_hex = compute_hmac_hex(canonical_bytes, _HMAC_KEY, previous_hmac_hex)
+
+    event = EventModel(
+        tenant_id=tenant_id,
+        module=module,
+        event_type=event_type,
+        canonical_event=canonical_event,
+        hmac_value=hmac_hex,
+        created_at=datetime.utcnow(),
+    )
+
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+
+    return event
 
 
 def log_policy_decision(
@@ -66,7 +112,7 @@ def log_policy_decision(
     Returns:
         EventModel: The logged event (appended to ledger)
     """
-    event_payload = {
+    canonical_event = {
         "event_type": "policy_decision",
         "agent": agent_name,
         "autonomy_tier": autonomy_tier,
@@ -75,18 +121,13 @@ def log_policy_decision(
         "reason": reason,
     }
 
-    event = EventModel(
+    return _append_event(
+        db=db,
         tenant_id=tenant_id,
+        module="ai_risk",
         event_type="policy_decision",
-        payload=event_payload,
-        created_at=datetime.utcnow(),
+        canonical_event=canonical_event,
     )
-
-    db.add(event)
-    db.commit()
-    db.refresh(event)
-
-    return event
 
 
 def log_circuit_breaker_halt(
@@ -109,7 +150,7 @@ def log_circuit_breaker_halt(
     Returns:
         EventModel: The halt event (appended to ledger)
     """
-    event_payload = {
+    canonical_event = {
         "event_type": "circuit_breaker_halt",
         "detector": drift_score.detector_type.value,
         "score": drift_score.score,
@@ -118,18 +159,13 @@ def log_circuit_breaker_halt(
         "reason": f"Drift detected: {drift_score.detector_type.value} {drift_score.score:.3f} >= {drift_score.threshold:.3f}",
     }
 
-    event = EventModel(
+    return _append_event(
+        db=db,
         tenant_id=tenant_id,
+        module="ai_risk",
         event_type="circuit_breaker_halt",
-        payload=event_payload,
-        created_at=datetime.utcnow(),
+        canonical_event=canonical_event,
     )
-
-    db.add(event)
-    db.commit()
-    db.refresh(event)
-
-    return event
 
 
 def log_drift_report(
@@ -160,7 +196,7 @@ def log_drift_report(
     Returns:
         EventModel: The logged event
     """
-    event_payload = {
+    canonical_event = {
         "event_type": "drift_score",
         "detector": detector_type,
         "score": score,
@@ -169,15 +205,10 @@ def log_drift_report(
         "details": details,
     }
 
-    event = EventModel(
+    return _append_event(
+        db=db,
         tenant_id=tenant_id,
+        module="ai_risk",
         event_type="drift_score",
-        payload=event_payload,
-        created_at=datetime.utcnow(),
+        canonical_event=canonical_event,
     )
-
-    db.add(event)
-    db.commit()
-    db.refresh(event)
-
-    return event

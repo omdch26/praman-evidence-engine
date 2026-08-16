@@ -32,6 +32,24 @@ Do not use Module 2 drift detection in production without implementing a real de
 
 ---
 
+### HMAC Chaining Key — Fixed Demo Key
+
+**Location:** `api/routers/events.py` (`hmac_key`), `services/event_logger.py` (`_HMAC_KEY`)
+
+**What it does:**
+Every event — whether posted directly to `POST /events` or logged internally by Module 2 (policy decisions, circuit-breaker halts, drift scores) — is HMAC-chained using the same fixed 32-byte all-zero key, rather than a tenant-specific key.
+
+**Why it is stubbed:**
+Per-tenant key management (generation, storage, rotation, and safe injection into both the API layer and the internal event logger) is a real key-management design decision, not a one-line fix. Using one fixed key keeps the demo's HMAC chain internally consistent — Module 1 and Module 2 events must chain with the *same* key or the chain breaks at the module boundary — without deciding the production key-custody model prematurely.
+
+**Production approach:**
+Load a per-tenant HMAC key (client-held, per `config.py`'s `hmac_key` setting) and thread it through both `api/routers/events.py` and `services/event_logger.py` so every write path uses the same tenant-scoped key.
+
+**Implication:**
+Do not use this build to make evidentiary claims across tenants or in production — the shared fixed key means any two tenants' events are technically chained with the same secret. Fine for demonstrating the chaining mechanism; not fine for real evidentiary separation.
+
+---
+
 ### RFC 3161 Timestamping — Local-Only Fallback
 
 **Location:** `adapters/anchor/local_only.py` (ships now), `adapters/anchor/rfc3161_freetsa.py` (documented, not implemented)
