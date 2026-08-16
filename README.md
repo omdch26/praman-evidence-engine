@@ -141,6 +141,10 @@ curl http://localhost:8000/health
 
 ### Running the full demo
 
+**Live interactive demo:** https://praman-evidence-engine.vercel.app (click buttons, no terminal needed)
+
+**Or run locally:**
+
 ```bash
 # Start the API (terminal 1)
 uvicorn praman.main:app --reload
