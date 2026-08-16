@@ -254,7 +254,7 @@ class TestMultiTenantIsolationInFullFlow:
         t1_events = t1_get.json()["events"]
 
         # Should only contain T1's event
-        t1_ids = [e["id"] for e in t1_events]
+        t1_ids = [e["event_id"] for e in t1_events]
         assert t1_event_id in t1_ids
 
     def test_governance_evaluation_isolated_by_tenant(self, client, db):

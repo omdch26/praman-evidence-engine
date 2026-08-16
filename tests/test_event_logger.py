@@ -25,6 +25,13 @@ from praman.services.event_logger import (
 )
 from praman.domain.drift import DriftScore, DriftType
 from praman.persistence.models import Event as EventModel
+from praman.persistence.database import SessionLocal
+
+
+@pytest.fixture
+def db() -> Session:
+    """Database session bound to the configured (Postgres) database."""
+    return SessionLocal()
 
 
 class TestPolicyDecisionLogging:
@@ -46,9 +53,9 @@ class TestPolicyDecisionLogging:
 
         assert event.tenant_id == tenant_id
         assert event.event_type == "policy_decision"
-        assert event.payload["decision"] == "allowed"
-        assert event.payload["agent"] == "RiskScoreAgent"
-        assert event.payload["autonomy_tier"] == "ACT_BOUNDED"
+        assert event.canonical_event["decision"] == "allowed"
+        assert event.canonical_event["agent"] == "RiskScoreAgent"
+        assert event.canonical_event["autonomy_tier"] == "ACT_BOUNDED"
 
     def test_denied_decision_logged(self, db: Session):
         """Denied decision is logged with reason."""
@@ -64,8 +71,8 @@ class TestPolicyDecisionLogging:
             reason="Tool not in allowlist for PROPOSE tier",
         )
 
-        assert event.payload["decision"] == "denied"
-        assert "allowlist" in event.payload["reason"]
+        assert event.canonical_event["decision"] == "denied"
+        assert "allowlist" in event.canonical_event["reason"]
 
     def test_decision_includes_forensic_info(self, db: Session):
         """Logged decision includes all forensic information."""
@@ -82,9 +89,9 @@ class TestPolicyDecisionLogging:
         )
 
         # All fields required for forensic replay
-        assert event.payload["agent"] in event.payload.values()
-        assert event.payload["policy"] in event.payload.values()
-        assert event.payload["autonomy_tier"] in event.payload.values()
+        assert event.canonical_event["agent"] in event.canonical_event.values()
+        assert event.canonical_event["policy"] in event.canonical_event.values()
+        assert event.canonical_event["autonomy_tier"] in event.canonical_event.values()
         assert event.created_at is not None
 
 
@@ -112,10 +119,10 @@ class TestCircuitBreakerHaltLogging:
 
         assert event.tenant_id == tenant_id
         assert event.event_type == "circuit_breaker_halt"
-        assert event.payload["detector"] == "psi_data"
-        assert event.payload["score"] == 0.30
-        assert event.payload["threshold"] == 0.25
-        assert event.payload["margin"] < 0  # score > threshold
+        assert event.canonical_event["detector"] == "psi_data"
+        assert event.canonical_event["score"] == 0.30
+        assert event.canonical_event["threshold"] == 0.25
+        assert event.canonical_event["margin"] < 0  # score > threshold
 
     def test_halt_includes_human_readable_reason(self, db: Session):
         """Halt event includes human-readable reason."""
@@ -132,9 +139,9 @@ class TestCircuitBreakerHaltLogging:
         event = log_circuit_breaker_halt(db=db, tenant_id=tenant_id, drift_score=drift_score)
 
         # Reason should be human-readable (for auditor, court)
-        assert "Drift detected" in event.payload["reason"]
-        assert "semantic_entropy" in event.payload["reason"]
-        assert "0.850" in event.payload["reason"]  # Formatted score
+        assert "Drift detected" in event.canonical_event["reason"]
+        assert "semantic_entropy" in event.canonical_event["reason"]
+        assert "0.850" in event.canonical_event["reason"]  # Formatted score
 
     def test_halt_is_admissible_as_evidence(self, db: Session):
         """Halt event is tamper-evident and can be part of ledger proof."""
@@ -154,7 +161,7 @@ class TestCircuitBreakerHaltLogging:
         # These checks are structural; the crypto proofs belong in domain tests
         assert event.id is not None  # Has a ledger entry
         assert event.created_at is not None
-        assert event.payload is not None  # Canonicalisable
+        assert event.canonical_event is not None  # Canonicalisable
 
 
 class TestDriftReportLogging:
@@ -174,9 +181,9 @@ class TestDriftReportLogging:
             details="Binning strategy: deciles",
         )
 
-        assert event.payload["detector"] == "psi_data"
-        assert event.payload["triggered"] is True
-        assert event.payload["details"] == "Binning strategy: deciles"
+        assert event.canonical_event["detector"] == "psi_data"
+        assert event.canonical_event["triggered"] is True
+        assert event.canonical_event["details"] == "Binning strategy: deciles"
 
     def test_nominal_drift_logged(self, db: Session):
         """Nominal drift score is logged (forensic visibility)."""
@@ -192,7 +199,7 @@ class TestDriftReportLogging:
             details="Output embeddings within reference distribution",
         )
 
-        assert event.payload["triggered"] is False
+        assert event.canonical_event["triggered"] is False
         # Nominal scores are logged so reviewers can see the full picture
         assert event.event_type == "drift_score"
 
@@ -210,7 +217,7 @@ class TestDriftReportLogging:
                 triggered=False,
             )
 
-            assert event.payload["detector"] == detector_type
+            assert event.canonical_event["detector"] == detector_type
 
 
 class TestMultiTenantIsolation:
@@ -241,7 +248,7 @@ class TestMultiTenantIsolation:
         # Both events are logged but belong to different tenants
         assert tenant_1_event.tenant_id == "tenant-1"
         assert tenant_2_event.tenant_id == "tenant-2"
-        assert tenant_1_event.payload["agent"] != tenant_2_event.payload["agent"]
+        assert tenant_1_event.canonical_event["agent"] != tenant_2_event.canonical_event["agent"]
 
     def test_halts_isolated_by_tenant(self, db: Session):
         """Circuit breaker halts are isolated by tenant."""
@@ -267,4 +274,4 @@ class TestMultiTenantIsolation:
         # Both halts are logged but belong to different tenants
         assert halt_1.tenant_id == "tenant-1"
         assert halt_2.tenant_id == "tenant-2"
-        assert halt_1.payload["detector"] != halt_2.payload["detector"]
+        assert halt_1.canonical_event["detector"] != halt_2.canonical_event["detector"]

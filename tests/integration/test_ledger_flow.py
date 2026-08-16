@@ -12,46 +12,29 @@ Run with: pytest tests/integration/test_ledger_flow.py -v
 """
 
 import pytest
+import uuid
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
 from datetime import datetime
 
 from praman.main import app
-from praman.persistence.database import get_db
-from praman.persistence.models import Base, Event
+from praman.persistence.models import Event
+from praman.persistence.database import SessionLocal
 from praman.domain.canonical import canonicalise
 from praman.domain.hashing import verify_hmac_chain
 
 
-# Setup test database (in-memory SQLite)
+# Praman's schema uses Postgres-specific JSONB columns (see
+# persistence/models.py), so an in-memory SQLite fixture cannot compile the
+# table DDL. Tests run against the real database configured via DATABASE_URL,
+# matching every other integration test file in this suite.
 @pytest.fixture
-def test_db():
-    """Create an in-memory SQLite database for testing."""
-    engine = create_engine(
-        "sqlite:///:memory:",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
-
-    Base.metadata.create_all(engine)
-    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-    def override_get_db():
-        db = SessionLocal()
-        try:
-            yield db
-        finally:
-            db.close()
-
-    app.dependency_overrides[get_db] = override_get_db
-    yield SessionLocal()
-    app.dependency_overrides.clear()
+def db():
+    """Database session bound to the configured (Postgres) database."""
+    return SessionLocal()
 
 
 @pytest.fixture
-def client(test_db):
+def client():
     """FastAPI test client."""
     return TestClient(app)
 
@@ -69,7 +52,7 @@ class TestEventIngestion:
         }
 
         response = client.post(
-            "/events/events",
+            "/events",
             json=event_data,
             headers={"X-Tenant-ID": "test_tenant_1"},
         )
@@ -85,7 +68,7 @@ class TestEventIngestion:
             "principal_id_hash": "sha256:abc123",
         }
 
-        response = client.post("/events/events", json=event_data)
+        response = client.post("/events", json=event_data)
 
         assert response.status_code == 422  # Validation error (missing header)
 
@@ -97,7 +80,7 @@ class TestEventIngestion:
         }
 
         response = client.post(
-            "/events/events",
+            "/events",
             json=event_data,
             headers={"X-Tenant-ID": "test_tenant_1"},
         )
@@ -113,7 +96,7 @@ class TestEventIngestion:
 
         event1 = {"event_type": "consent_granted", "principal_id_hash": "sha256:abc"}
         response1 = client.post(
-            "/events/events",
+            "/events",
             json=event1,
             headers={"X-Tenant-ID": tenant},
         )
@@ -123,7 +106,7 @@ class TestEventIngestion:
 
         event2 = {"event_type": "consent_withdrawn", "principal_id_hash": "sha256:abc"}
         response2 = client.post(
-            "/events/events",
+            "/events",
             json=event2,
             headers={"X-Tenant-ID": tenant},
         )
@@ -146,7 +129,7 @@ class TestEventRetrieval:
         # First, append an event
         event_data = {"event_type": "consent_granted", "principal_id_hash": "sha256:abc"}
         post_response = client.post(
-            "/events/events",
+            "/events",
             json=event_data,
             headers={"X-Tenant-ID": "test_tenant_1"},
         )
@@ -154,7 +137,7 @@ class TestEventRetrieval:
 
         # Then, retrieve it
         get_response = client.get(
-            f"/events/events/{event_id}",
+            f"/events/{event_id}",
             headers={"X-Tenant-ID": "test_tenant_1"},
         )
 
@@ -168,7 +151,7 @@ class TestEventRetrieval:
         # Append event for tenant 1
         event_data = {"event_type": "consent_granted", "principal_id_hash": "sha256:abc"}
         post_response = client.post(
-            "/events/events",
+            "/events",
             json=event_data,
             headers={"X-Tenant-ID": "tenant_1"},
         )
@@ -176,7 +159,7 @@ class TestEventRetrieval:
 
         # Try to retrieve as tenant 2
         get_response = client.get(
-            f"/events/events/{event_id}",
+            f"/events/{event_id}",
             headers={"X-Tenant-ID": "tenant_2"},
         )
 
@@ -185,20 +168,24 @@ class TestEventRetrieval:
 
     def test_list_events(self, client):
         """GET /events lists events for a tenant."""
-        tenant = "test_tenant_1"
+        # Tenant ID includes a UUID: this test asserts an exact count, and
+        # events persist in the real database across test runs (no per-test
+        # rollback). A fixed tenant ID would accumulate rows on every rerun
+        # and break the exact-count assertion below.
+        tenant = f"test_tenant_list_events_{uuid.uuid4().hex[:8]}"
 
         # Append 3 events
         for i in range(3):
             event_data = {"event_type": f"event_{i}", "principal_id_hash": "sha256:abc"}
             client.post(
-                "/events/events",
+                "/events",
                 json=event_data,
                 headers={"X-Tenant-ID": tenant},
             )
 
         # List events
         list_response = client.get(
-            "/events/events",
+            "/events",
             headers={"X-Tenant-ID": tenant},
         )
 
@@ -211,15 +198,18 @@ class TestEventRetrieval:
 class TestHMACChaining:
     """Test that HMAC chaining works end-to-end."""
 
-    def test_hmac_chain_is_verifiable(self, client, test_db):
+    def test_hmac_chain_is_verifiable(self, client, db):
         """HMAC chain stored in database is verifiable."""
-        tenant = "test_tenant_1"
+        # Tenant ID includes a UUID: this test asserts an exact event count
+        # against the real (non-rolled-back) database — see test_list_events
+        # for why a fixed tenant ID would accumulate rows across reruns.
+        tenant = f"test_tenant_hmac_chain_{uuid.uuid4().hex[:8]}"
         hmac_key = b"\x00" * 32  # Same key used in the endpoint
 
         # Append event 1
         event1_data = {"event_type": "consent_granted", "principal_id_hash": "sha256:abc"}
         response1 = client.post(
-            "/events/events",
+            "/events",
             json=event1_data,
             headers={"X-Tenant-ID": tenant},
         )
@@ -228,14 +218,14 @@ class TestHMACChaining:
         # Append event 2
         event2_data = {"event_type": "consent_withdrawn", "principal_id_hash": "sha256:abc"}
         response2 = client.post(
-            "/events/events",
+            "/events",
             json=event2_data,
             headers={"X-Tenant-ID": tenant},
         )
         assert response2.status_code == 201
 
         # Retrieve events from database
-        events = test_db.query(Event).filter(Event.tenant_id == tenant).order_by(Event.id).all()
+        events = db.query(Event).filter(Event.tenant_id == tenant).order_by(Event.id).all()
 
         assert len(events) == 2
 
@@ -248,7 +238,7 @@ class TestHMACChaining:
         # The chain should verify
         assert verify_hmac_chain(events_to_verify, hmac_key) is True
 
-    def test_tampering_would_break_chain(self, test_db):
+    def test_tampering_would_break_chain(self, db):
         """If an event is tampered with, the chain breaks (demonstrates integrity)."""
         # This is a direct test, not via API
         hmac_key = b"\x00" * 32

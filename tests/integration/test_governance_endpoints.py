@@ -70,7 +70,7 @@ class TestGovernanceEvaluateEndpoint:
         )
 
         assert response.status_code == 400
-        assert "Unknown autonomy tier" in response.text
+        assert "Invalid autonomy tier" in response.text
 
     def test_evaluate_governance_observe_tool_allowed(self, client, db):
         """OBSERVE tier allows read-only tools."""
