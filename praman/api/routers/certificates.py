@@ -40,7 +40,7 @@ from praman.domain.signing import generate_keypair, sign_root_hex
 router = APIRouter()
 
 
-@router.get("/certificates/latest")
+@router.get("/latest")
 async def get_latest_certificate(
     db: Session = Depends(get_db),
     tenant_id: str = Header(..., alias="X-Tenant-ID"),
@@ -89,7 +89,7 @@ async def get_latest_certificate(
     }
 
 
-@router.get("/certificates/{certificate_id}")
+@router.get("/{certificate_id}")
 async def get_certificate_pdf(
     certificate_id: int,
     db: Session = Depends(get_db),
@@ -241,7 +241,7 @@ This certificate is generated in demonstration mode. Before production use:
     return text_content.encode("utf-8")
 
 
-@router.post("/certificates/generate")
+@router.post("/generate")
 async def generate_certificate_for_range(
     from_event: int,
     to_event: int,

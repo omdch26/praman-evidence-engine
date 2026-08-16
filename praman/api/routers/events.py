@@ -80,7 +80,7 @@ class EventResponse(BaseModel):
         from_attributes = True
 
 
-@router.post("/events", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
 async def create_event(
     event: EventRequest,
     db: Session = Depends(get_db),
@@ -191,7 +191,7 @@ async def create_event(
         )
 
 
-@router.get("/events/{event_id}", response_model=Dict[str, Any])
+@router.get("/{event_id}", response_model=Dict[str, Any])
 async def get_event(
     event_id: int,
     db: Session = Depends(get_db),
@@ -238,7 +238,7 @@ async def get_event(
     }
 
 
-@router.get("/events")
+@router.get("")
 async def list_events(
     db: Session = Depends(get_db),
     tenant_id: str = Header(..., alias="X-Tenant-ID"),
