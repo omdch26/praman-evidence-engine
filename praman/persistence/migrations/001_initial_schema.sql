@@ -2,9 +2,6 @@
 -- Purpose: Create events table (append-only), RLS policies, indexes
 -- Timestamp: 2026-08-10
 
--- Enable RLS (Row Level Security) for tenant isolation
-ALTER SCHEMA public OWNER TO postgres;
-
 -- Events table: append-only ledger of all events
 CREATE TABLE IF NOT EXISTS events (
     id SERIAL PRIMARY KEY,
