@@ -183,11 +183,27 @@ class TestAttributeIsolation:
 
     def test_no_imports_from_domain(self):
         """Adapter does not import from domain/ (isolation check)."""
+        import ast
+        import inspect
         import praman.adapters.instrumentation.otel_adapter as adapter_module
 
-        # Verify module docstring exists (documentation of isolation)
-        assert adapter_module.__doc__ is not None
-        assert "isolated" in adapter_module.__doc__.lower()
+        source = inspect.getsource(adapter_module)
+        tree = ast.parse(source)
+
+        imported_modules = [
+            alias.name
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Import)
+            for alias in node.names
+        ] + [
+            node.module
+            for node in ast.walk(tree)
+            if isinstance(node, ast.ImportFrom) and node.module
+        ]
+
+        assert not any(
+            module.startswith("praman.domain") for module in imported_modules
+        ), f"otel_adapter must not import from domain/, found: {imported_modules}"
 
     def test_attribute_keys_are_consistent(self):
         """All mapped attributes follow a consistent naming scheme."""

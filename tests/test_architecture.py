@@ -10,7 +10,6 @@ Run with: pytest tests/test_architecture.py -v
 import ast
 import os
 from pathlib import Path
-from typing import set as SetType
 
 
 def get_python_files(directory: str) -> dict[str, list[str]]:

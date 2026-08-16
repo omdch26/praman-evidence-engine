@@ -52,12 +52,13 @@ class TestAutonomyTierEnum:
         assert tier1 <= tier2
 
     def test_tier_not_equal_to_other_types(self):
-        """Comparing tier to non-tier returns NotImplemented."""
+        """Comparing tier to a non-numeric type returns False, not an error."""
         tier = AutonomyTier.OBSERVE
 
-        # Python's comparison will return False
+        # AutonomyTier is an IntEnum, so it equals its int value by design
+        # (OBSERVE == 0). It is not, however, equal to unrelated types.
         assert not (tier == "OBSERVE")
-        assert not (tier == 0)
+        assert tier == 0
 
     def test_tier_permits_capability(self):
         """permits() checks if a tier allows a capability."""

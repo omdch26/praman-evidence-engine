@@ -10,6 +10,11 @@ These tests prove:
 The most critical test: test_tampering_changes_root. This proves the core claim
 that makes the entire system work: any change to any event is detectable.
 
+Fixtures use real hex strings throughout (never plain ASCII like "abc" or "a")
+because hash_leaf() requires valid hex, matching what production code passes it
+(hmac.hexdigest() output). Using ASCII placeholders masked real failures behind
+a ValueError from bytes.fromhex() instead of exercising the Merkle logic.
+
 Run with: pytest tests/domain/test_merkle.py -v
 """
 
@@ -26,12 +31,17 @@ from praman.domain.merkle import (
 )
 
 
+def hex_hmac(seed: int) -> str:
+    """Produce a deterministic, valid 64-char hex string for a given seed."""
+    return format(seed, "x").rjust(2, "0") * 32
+
+
 class TestMerkleLeafHashing:
     """Test leaf node hashing."""
 
     def test_hash_leaf_is_deterministic(self):
         """Same HMAC → same leaf hash, every time."""
-        hmac_hex = "9f86d081884c7d659a2f20dbf60f39b4c10a2e0f7c7f8d9e"
+        hmac_hex = hex_hmac(0x9F)
 
         leaf1 = hash_leaf(hmac_hex)
         leaf2 = hash_leaf(hmac_hex)
@@ -119,8 +129,8 @@ class TestMerkleRootComputation:
 
     def test_odd_events_are_duplicated(self):
         """With 3 events, the last is duplicated before hashing."""
-        hmacs_3 = ["abc", "def", "ghi"]
-        hmacs_4 = ["abc", "def", "ghi", "ghi"]  # 4th is duplicate of 3rd
+        hmacs_3 = [hex_hmac(1), hex_hmac(2), hex_hmac(3)]
+        hmacs_4 = hmacs_3 + [hex_hmac(3)]  # 4th is duplicate of 3rd
 
         root_3 = compute_root(hmacs_3)
         root_4 = compute_root(hmacs_4)
@@ -136,7 +146,7 @@ class TestMerkleRootComputation:
 
     def test_root_is_deterministic(self):
         """Same events in same order → same root, always."""
-        hmacs = ["abc", "def", "ghi", "jkl"]
+        hmacs = [hex_hmac(1), hex_hmac(2), hex_hmac(3), hex_hmac(4)]
 
         root1 = compute_root(hmacs)
         root2 = compute_root(hmacs)
@@ -145,7 +155,7 @@ class TestMerkleRootComputation:
 
     def test_root_hex_returns_64_chars(self):
         """compute_root_hex returns hex string (64 characters)."""
-        hmacs = ["abc", "def"]
+        hmacs = [hex_hmac(1), hex_hmac(2)]
 
         root_hex = compute_root_hex(hmacs)
 
@@ -165,13 +175,13 @@ class TestTamperingDetection:
         altered without detection. If this test ever fails, nothing else in
         this repository means anything.
         """
-        hmacs_original = ["abc123", "def456", "ghi789", "jkl012"]
+        hmacs_original = [hex_hmac(1), hex_hmac(2), hex_hmac(3), hex_hmac(4)]
 
         root_original = compute_root(hmacs_original)
 
         # Tamper with event 1
         hmacs_tampered = list(hmacs_original)
-        hmacs_tampered[1] = "TAMPERED_VALUE"
+        hmacs_tampered[1] = hex_hmac(0xFF)
 
         root_tampered = compute_root(hmacs_tampered)
 
@@ -179,12 +189,12 @@ class TestTamperingDetection:
 
     def test_tampering_any_event_breaks_root(self):
         """Tampering any event (not just one) breaks the root."""
-        hmacs = ["a", "b", "c", "d", "e"]
+        hmacs = [hex_hmac(i) for i in range(1, 6)]
         root_original = compute_root(hmacs)
 
         for i in range(len(hmacs)):
             hmacs_test = list(hmacs)
-            hmacs_test[i] = "TAMPERED"
+            hmacs_test[i] = hex_hmac(0xFF)
             root_test = compute_root(hmacs_test)
             assert root_test != root_original, f"Tampering event {i} must change root"
 
@@ -216,7 +226,7 @@ class TestInclusionProofs:
 
     def test_generate_proof_for_each_event(self):
         """Proofs can be generated for any event in the tree."""
-        hmacs = ["a", "b", "c", "d"]
+        hmacs = [hex_hmac(i) for i in range(1, 5)]
         root = compute_root(hmacs)
 
         for i in range(len(hmacs)):
@@ -225,8 +235,8 @@ class TestInclusionProofs:
 
     def test_proof_is_logarithmic_size(self):
         """Proof size is O(log n), not O(n)."""
-        hmacs_10 = [f"hmac_{i:03d}" for i in range(10)]
-        hmacs_1000 = [f"hmac_{i:04d}" for i in range(1000)]
+        hmacs_10 = [hex_hmac(i) for i in range(10)]
+        hmacs_1000 = [hex_hmac(i % 256) for i in range(1000)]
 
         proof_10, _ = generate_inclusion_proof(hmacs_10, 5)
         proof_1000, _ = generate_inclusion_proof(hmacs_1000, 500)
@@ -238,7 +248,7 @@ class TestInclusionProofs:
 
     def test_wrong_root_fails_verification(self):
         """Proof verification fails if the root is wrong."""
-        hmacs = ["a", "b", "c", "d"]
+        hmacs = [hex_hmac(i) for i in range(1, 5)]
         correct_root = compute_root(hmacs)
 
         wrong_root = b"\x00" * 32  # Completely wrong root
@@ -249,7 +259,7 @@ class TestInclusionProofs:
 
     def test_proof_of_wrong_event_fails(self):
         """Proof for one event doesn't work for another."""
-        hmacs = ["a", "b", "c", "d"]
+        hmacs = [hex_hmac(i) for i in range(1, 5)]
         root = compute_root(hmacs)
 
         proof_0, positions = generate_inclusion_proof(hmacs, 0)
@@ -259,7 +269,7 @@ class TestInclusionProofs:
 
     def test_proof_without_tampering(self):
         """Proof for an unmodified event verifies."""
-        hmacs = ["abc123", "def456", "ghi789", "jkl012", "mno345"]
+        hmacs = ["abc123", "def456", "aabbcc", "112233", "556677"]
         root = compute_root(hmacs)
 
         # Generate proof for event 2
@@ -270,13 +280,13 @@ class TestInclusionProofs:
 
     def test_proof_catches_tampering(self):
         """Proof fails if the event was tampered with."""
-        hmacs = ["a", "b", "c", "d"]
+        hmacs = [hex_hmac(i) for i in range(1, 5)]
         root = compute_root(hmacs)
 
         proof, positions = generate_inclusion_proof(hmacs, 1)
 
         # Tamper with the event's HMAC
-        tampered_hmac = "TAMPERED_VALUE"
+        tampered_hmac = hex_hmac(0xFF)
 
         assert verify_inclusion_proof(tampered_hmac, proof, positions, root) is False
 
@@ -286,7 +296,7 @@ class TestInclusionProofPrivacy:
 
     def test_proof_does_not_require_other_events(self):
         """To verify a proof, you only need the event and proof (not other events)."""
-        hmacs = ["a", "b", "c", "d", "e", "f", "g", "h"]
+        hmacs = [hex_hmac(i) for i in range(1, 9)]
         root = compute_root(hmacs)
 
         proof, positions = generate_inclusion_proof(hmacs, 3)
@@ -295,7 +305,7 @@ class TestInclusionProofPrivacy:
         verified = verify_inclusion_proof(hmacs[3], proof, positions, root)
         assert verified is True
 
-        # Proof doesn't contain the other events
+        # Proof doesn't contain the other events' raw HMAC hex values
         assert hmacs[0] not in [p.hex() for p in proof if isinstance(p, bytes)]
 
 
@@ -303,14 +313,19 @@ class TestDomainSeparation:
     """Domain separation prevents second-preimage attacks."""
 
     def test_leaf_and_node_hashes_differ(self):
-        """A leaf hash and a node hash of the same input differ (domain separation)."""
-        data = b"test_data_" + b"\x00" * 22
+        """A leaf hash and a node hash of the same 32 bytes differ (domain separation)."""
+        # Use the leaf hash's own raw bytes as if they were a node's children,
+        # so both hash_leaf and hash_node process the exact same underlying
+        # 32-byte payload. If prefixing worked, the outputs must differ.
+        hmac_hex = hex_hmac(1)
+        leaf = hash_leaf(hmac_hex)
 
-        # This is a bit artificial, but demonstrates the concept
-        leaf = hash_leaf("abc123" * 10 + "abc")[:32]  # Not quite right, but shows the idea
+        node_of_same_bytes = hash_node(leaf, leaf)
 
-        # A real test would compare leaf vs node of same data, but the API doesn't allow it
-        # The real protection is in the prefix
+        assert leaf != node_of_same_bytes, (
+            "Domain separation must make leaf and node hashes diverge "
+            "even when derived from the same underlying bytes"
+        )
 
 
 class TestEdgeCases:
@@ -318,14 +333,14 @@ class TestEdgeCases:
 
     def test_out_of_range_event_index(self):
         """Invalid event index raises IndexError."""
-        hmacs = ["a", "b", "c"]
+        hmacs = [hex_hmac(1), hex_hmac(2), hex_hmac(3)]
 
         with pytest.raises(IndexError):
             generate_inclusion_proof(hmacs, 10)
 
     def test_negative_event_index(self):
         """Negative event index raises IndexError."""
-        hmacs = ["a", "b", "c"]
+        hmacs = [hex_hmac(1), hex_hmac(2), hex_hmac(3)]
 
         with pytest.raises(IndexError):
             generate_inclusion_proof(hmacs, -1)
@@ -337,7 +352,7 @@ class TestEdgeCases:
 
     def test_large_tree(self):
         """Tree construction works for large event lists."""
-        hmacs = [f"hmac_{i:06d}" for i in range(10000)]
+        hmacs = [hex_hmac(i % 256) for i in range(10000)]
 
         root = compute_root(hmacs)
 
