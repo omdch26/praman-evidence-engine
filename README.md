@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
 **Status:** Live · **Last updated:** 16 Aug 2026
 
-**Live demo:** https://praman-evidence-engine.vercel.app · **Backend:** https://praman-evidence-engine.onrender.com/health
+**Live:** https://praman-evidence-engine.vercel.app · **Backend:** https://praman-evidence-engine.onrender.com/health
 
 ---
 
@@ -141,7 +141,7 @@ curl http://localhost:8000/health
 
 ### Running the full demo
 
-**Live interactive demo:** https://praman-evidence-engine.vercel.app (click buttons, no terminal needed)
+**Live interactive demo:** https://praman-evidence-engine.vercel.app/demo (click buttons, no terminal needed)
 
 **Or run locally:**
 
@@ -239,7 +239,7 @@ See [`praman/domain/canonical.py`](praman/domain/canonical.py) for the implement
 
 **For the next engineer:** Read `ONBOARDING.md` (1h), then start with `domain/` and work outward.
 
-**For a CFO, CTO, or compliance reviewer:** Open the [live demo](https://praman-evidence-engine.vercel.app) — plain-English by default, with an expert toggle that reveals the hash chain, the Merkle root, and a table mapping each feature to the specific regulation it satisfies.
+**For a CFO, CTO, or compliance reviewer:** Open the [live demo](https://praman-evidence-engine.vercel.app/demo) — plain-English by default, with an expert toggle that reveals the hash chain, the Merkle root, and a table mapping each feature to the specific regulation it satisfies.
 
 ---
 
@@ -294,7 +294,7 @@ curl -s https://praman-evidence-engine.onrender.com/keys/public \
 python scripts/verify_bundle.py bundle.json --public-key key.pem
 ```
 
-Or open the [live demo](https://praman-evidence-engine.vercel.app) and use the
+Or open the [live demo](https://praman-evidence-engine.vercel.app/demo) and use the
 "Verify this yourself" panel — it runs the identical check in your own browser
 via native WebCrypto, with no server call needed to reach a verdict. See
 [`docs/VERIFICATION.md`](docs/VERIFICATION.md) for the full spec, a worked
@@ -384,16 +384,16 @@ MIT. Use it as you wish. Include a copy of `LICENSE` if you redistribute.
 
 ## Questions?
 
-- **Why not blockchain?** See [`docs/ADR/0002-merkle-over-blockchain.md`](docs/ADR/0002-merkle-over-blockchain.md), or the cost comparison in the [live demo](https://praman-evidence-engine.vercel.app)
+- **Why not blockchain?** See [`docs/ADR/0002-merkle-over-blockchain.md`](docs/ADR/0002-merkle-over-blockchain.md), or the cost comparison in the [live demo](https://praman-evidence-engine.vercel.app/demo)
 - **Is this admissible in court?** See [`LIMITATIONS.md`](docs/LIMITATIONS.md) — the BSA §63 certificate format is implemented; court admissibility itself has not been tested
-- **Which regulation does each feature satisfy?** Flip the expert toggle in the [live demo](https://praman-evidence-engine.vercel.app) for a feature-by-feature mapping to DPDP Rules 2025, RBI's FREE-AI Framework, and BSA §63
+- **Which regulation does each feature satisfy?** Flip the expert toggle in the [live demo](https://praman-evidence-engine.vercel.app/demo) for a feature-by-feature mapping to DPDP Rules 2025, RBI's FREE-AI Framework, and BSA §63
 - **For technical questions:** Open an issue. Read [`ONBOARDING.md`](docs/ONBOARDING.md) first.
 
 ---
 
 ## Contact
 
-Sri · [Email](mailto:medarsri@gmail.com) · [LinkedIn](https://linkedin.com/in/sriram-krishnan-64b55628/)
+Sri · [Email](mailto:medarsri@gmail.com) · [LinkedIn](https://www.linkedin.com/in/srihari-medarametla-ai-governance/)
 
 Built with 🔒 for Indian regulated AI.
 

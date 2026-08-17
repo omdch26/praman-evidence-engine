@@ -10,7 +10,7 @@ There are three ways to verify a bundle, in increasing order of
 independence from Praman's own infrastructure:
 
 1. **In your browser**, using the "Verify this yourself" panel on the
-   [live demo](https://praman-evidence-engine.vercel.app) — native
+   [live demo](https://praman-evidence-engine.vercel.app/demo) — native
    WebCrypto, no server-side trust required once the bundle and public key
    are fetched.
 2. **Offline, with the standalone script** — `scripts/verify_bundle.py`,
@@ -207,7 +207,7 @@ independent reimplementation of the same specification.
 
 ## Verifying in your browser
 
-Open the [live demo](https://praman-evidence-engine.vercel.app), generate
+Open the [live demo](https://praman-evidence-engine.vercel.app/demo), generate
 a scenario, then use the "Verify this yourself" panel. It performs the
 exact four steps above using `crypto.subtle` — native WebCrypto, no
 external library — and shows each intermediate value as it computes it.

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Praman — Tamper-Evident Evidence Engine</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: #f4f5f7;
+    color: #1f2937;
+    line-height: 1.6;
+    padding: 1.5rem;
+}
+
+.wrap { max-width: 900px; margin: 0 auto; }
+
+/* Header — same palette and shape as demo.html's header */
+header {
+    background: #111827;
+    color: white;
+    padding: 2.5rem 2rem;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+header h1 { font-size: 2.1rem; margin-bottom: 0.5rem; }
+header p.tag { color: #9ca3af; font-size: 1.05rem; max-width: 640px; margin: 0 auto; }
+
+/* Cards — identical convention to demo.html's .card */
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.75rem;
+    margin-bottom: 1.5rem;
+}
+.card h2 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+}
+.card .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.7rem;
+    color: #6b7280;
+    font-weight: 700;
+    margin-bottom: 0.4rem;
+}
+
+.info {
+    background: #eff6ff; border-left: 4px solid #2563eb; padding: 1rem 1.25rem; border-radius: 6px;
+    font-size: 0.9rem; margin-top: 1rem;
+}
+.info.green { background: #f0fdf4; border-color: #059669; }
+
+/* Route cards */
+.routes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+.route {
+    display: block;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.75rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: 0.15s;
+}
+.route:hover { border-color: #2563eb; box-shadow: 0 2px 10px rgba(37,99,235,0.08); }
+.route .route-icon { font-size: 1.6rem; margin-bottom: 0.6rem; }
+.route .route-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 0.4rem; color: #111827; }
+.route .route-desc { font-size: 0.87rem; color: #6b7280; }
+.route.primary { border-color: #2563eb; background: #eff6ff; }
+
+footer { text-align: center; color: #6b7280; font-size: 0.85rem; padding: 1.5rem 0; }
+footer a { color: #2563eb; text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+    <h1>🔒 Praman</h1>
+    <p class="tag">A tamper-evident evidence engine for regulated AI in India</p>
+</header>
+
+<!-- Problem — reused verbatim from demo.html's hero card -->
+<div class="card">
+    <div class="eyebrow">The Problem</div>
+    <h2>"Prove this AI decision wasn't tampered with."</h2>
+    <p style="color:#374151; font-size:0.95rem;">
+        A bank approves a loan using an AI system. A customer later disputes the decision. The regulator asks a simple
+        question: <strong>how do you know your own team didn't quietly edit the record after the fact?</strong>
+        A database row isn't an answer. Whoever controls the database can edit it. Praman replaces "trust us" with
+        a chain of events that makes editing detectable within milliseconds.
+    </p>
+    <div class="info green">
+        <strong>What's real right now:</strong> 8 features working today, 3 stubbed and openly disclosed, 6 on the
+        roadmap — see exactly which is which in the demo's maturity panel. Nothing here is presented as done that isn't.
+    </div>
+</div>
+
+<!-- Three routes, nothing else -->
+<div class="routes">
+    <a class="route primary" href="/demo">
+        <div class="route-icon">▶️</div>
+        <div class="route-title">See it work</div>
+        <div class="route-desc">The live, interactive demo — build a scenario, verify the evidence chain yourself in your own browser.</div>
+    </a>
+    <a class="route" href="https://github.com/omdch26/praman-evidence-engine/blob/main/docs/ARCHITECTURE.md" target="_blank" rel="noopener">
+        <div class="route-icon">🏗️</div>
+        <div class="route-title">How it's built</div>
+        <div class="route-desc">Layered architecture, dependency rules, and the design decisions behind them, on GitHub.</div>
+    </a>
+    <a class="route" href="mailto:medarsri@gmail.com">
+        <div class="route-icon">✉️</div>
+        <div class="route-title">Talk to me</div>
+        <div class="route-desc">Email, or find me on <span style="text-decoration:underline;">LinkedIn</span> — links below.</div>
+    </a>
+</div>
+
+<footer>
+    <a href="mailto:medarsri@gmail.com">Email</a> ·
+    <a href="https://www.linkedin.com/in/srihari-medarametla-ai-governance/" target="_blank" rel="noopener">LinkedIn</a> ·
+    <a href="https://github.com/omdch26/praman-evidence-engine" target="_blank" rel="noopener">GitHub</a>
+</footer>
+
+</div>
+</body>
+</html>
