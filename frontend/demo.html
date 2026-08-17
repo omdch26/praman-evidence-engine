@@ -123,10 +123,13 @@ button {
     padding: 0.7rem 1.3rem; border: none; border-radius: 7px; font-weight: 600;
     cursor: pointer; font-size: 0.9rem; transition: 0.15s;
 }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn-primary { background: #2563eb; color: white; }
 .btn-primary:hover { background: #1d4ed8; }
 .btn-danger { background: #dc2626; color: white; }
 .btn-danger:hover { background: #b91c1c; }
+.btn-warn { background: #d97706; color: white; }
+.btn-warn:hover { background: #b45309; }
 .btn-ghost { background: #f3f4f6; color: #1f2937; }
 .btn-ghost:hover { background: #e5e7eb; }
 .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
@@ -163,12 +166,14 @@ button {
     display: flex; align-items: flex-start; gap: 0.6rem;
 }
 .verify-item.fail { border-color: #fecaca; background: #fef2f2; }
+.verify-item.pending { border-color: #d1d5db; background: #f9fafb; }
 .verify-item .check {
     width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; margin-top: 0.1rem;
     display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700;
     background: #059669; color: white;
 }
 .verify-item.fail .check { background: #dc2626; }
+.verify-item.pending .check { background: #9ca3af; }
 .verify-item .t { font-weight: 700; font-size: 0.88rem; }
 .verify-item .d { font-size: 0.8rem; color: #4b5563; margin-top: 0.1rem; }
 
@@ -201,6 +206,56 @@ table.cmp td { padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; }
     font-size: 0.9rem; margin-top: 1rem;
 }
 .info.green { background: #f0fdf4; border-color: #059669; }
+.info.amber { background: #fffbeb; border-color: #d97706; }
+
+/* Request log */
+.reqlog {
+    display: none; margin-top: 1rem; background: #0f172a; border-radius: 8px; padding: 0.9rem 1rem;
+    font-family: 'Courier New', monospace; font-size: 0.76rem; max-height: 220px; overflow-y: auto;
+}
+.show-expert .reqlog { display: block; }
+.reqlog-empty { color: #64748b; }
+.reqlog-row { color: #cbd5e1; padding: 0.2rem 0; border-bottom: 1px solid #1e293b; display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.reqlog-row:last-child { border-bottom: none; }
+.reqlog-method { color: #38bdf8; font-weight: 700; min-width: 3.2em; }
+.reqlog-status { font-weight: 700; }
+.reqlog-status.ok { color: #34d399; }
+.reqlog-status.err { color: #f87171; }
+.reqlog-ms { color: #94a3b8; margin-left: auto; }
+.reqlog-url { color: #e2e8f0; word-break: break-all; }
+
+/* Verify panel (Layer 3) */
+.verify-steps { display: flex; flex-direction: column; gap: 0.5rem; margin: 1rem 0; }
+.vstep {
+    display: flex; align-items: center; gap: 0.7rem; padding: 0.65rem 0.9rem;
+    border: 1px solid #e5e7eb; border-radius: 8px; background: #fafafa; font-size: 0.88rem;
+}
+.vstep .vicon {
+    width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
+    background: #d1d5db; color: #4b5563;
+}
+.vstep.pass { border-color: #86efac; background: #f0fdf4; }
+.vstep.pass .vicon { background: #059669; color: white; }
+.vstep.fail { border-color: #fecaca; background: #fef2f2; }
+.vstep.fail .vicon { background: #dc2626; color: white; }
+.vstep.skip .vicon { background: #f59e0b; color: white; }
+.vstep .vlabel { flex: 1; }
+.vstep .vvalue { font-family: 'Courier New', monospace; font-size: 0.72rem; color: #6b7280; word-break: break-all; }
+
+.verify-banner {
+    background: #111827; color: #d1d5db; padding: 0.9rem 1.1rem; border-radius: 8px;
+    font-size: 0.85rem; margin-bottom: 1rem;
+}
+.verify-banner strong { color: white; }
+
+.tamper-result {
+    margin-top: 1rem; padding: 1rem; border-radius: 8px; font-family: 'Courier New', monospace;
+    font-size: 0.78rem; white-space: pre-wrap; word-break: break-word; display: none;
+}
+.tamper-result.show { display: block; }
+.tamper-result.rejected { background: #f0fdf4; color: #065f46; border: 1px solid #86efac; }
+.tamper-result.succeeded { background: #fef2f2; color: #7f1d1d; border: 1px solid #fecaca; }
 
 /* Roadmap */
 .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
@@ -267,7 +322,7 @@ footer a { color: #2563eb; text-decoration: none; }
 <div class="toggle-bar">
     <div>
         <div class="label">🔍 Show expert detail</div>
-        <div class="sub">Reveals cryptographic proof and specific regulatory citations (DPDP Rules 2025, RBI FREE-AI, BSA §63)</div>
+        <div class="sub">Reveals cryptographic proof, the live request log, and specific regulatory citations (DPDP Rules 2025, RBI FREE-AI, BSA §63)</div>
     </div>
     <label class="switch">
         <input type="checkbox" id="expertToggle" onchange="toggleExpert()">
@@ -283,7 +338,8 @@ footer a { color: #2563eb; text-decoration: none; }
         A bank approves a loan using an AI system. A customer later disputes the decision. The regulator asks a simple
         question: <strong>how do you know your own team didn't quietly edit the record after the fact?</strong>
         A database row isn't an answer. Whoever controls the database can edit it. Praman replaces "trust us" with
-        a chain of events that makes editing detectable within milliseconds.
+        a chain of events that makes editing detectable within milliseconds — and this page proves it against the
+        real backend, not a mockup.
     </p>
     <div class="reg-table">
         <div class="info">
@@ -300,6 +356,10 @@ footer a { color: #2563eb; text-decoration: none; }
 <div class="card">
     <div class="eyebrow">Try It</div>
     <h2>Build a scenario</h2>
+    <p style="color:#374151; font-size:0.85rem; margin-bottom:1rem;">
+        This posts real events to the live API under a private, per-session tenant (<code id="tenantIdDisplay" style="font-family:'Courier New',monospace; background:#f3f4f6; padding:0.1rem 0.4rem; border-radius:4px;">…</code>) —
+        nobody else's data, and nobody else sees yours.
+    </p>
     <div class="scenario-grid">
         <div class="field">
             <label>Bank</label>
@@ -335,7 +395,10 @@ footer a { color: #2563eb; text-decoration: none; }
         </div>
     </div>
     <div class="btn-row">
-        <button class="btn-primary" onclick="generateLedger()">Generate evidence ledger</button>
+        <button class="btn-primary" onclick="generateLedger()" id="generateBtn">Generate evidence ledger</button>
+    </div>
+    <div class="reqlog" id="reqlog">
+        <div class="reqlog-empty" id="reqlogEmpty">No requests yet.</div>
     </div>
 </div>
 
@@ -353,10 +416,37 @@ footer a { color: #2563eb; text-decoration: none; }
             <div class="verify-item" id="v2"><div class="check">✓</div><div><div class="t" id="v2t">Tamper-proof: yes</div><div class="d">Editing any event breaks the whole chain, visibly</div></div></div>
             <div class="verify-item" id="v3"><div class="check">✓</div><div><div class="t" id="v3t">Court-admissible: yes</div><div class="d">Structured per BSA 2023 §63 certificate format</div></div></div>
         </div>
-        <div class="root-box" id="rootBox">merkle_root: 4f9a1c...</div>
+        <div class="root-box" id="rootBox">merkle_root: …</div>
         <div class="btn-row">
-            <button class="btn-danger" onclick="tamperEvent()">⚠ Try to secretly edit event #5</button>
+            <button class="btn-danger" onclick="tryEditDatabase()">⚠ Try to edit the database</button>
+            <button class="btn-warn" onclick="assumeAttackerPastDatabase()">🕵 Assume an attacker got past the database</button>
             <button class="btn-ghost" onclick="resetDemo()">Reset</button>
+        </div>
+        <div class="tamper-result" id="tamperResult"></div>
+    </div>
+</div>
+
+<!-- Verify this yourself (Layer 3) -->
+<div class="card">
+    <div class="eyebrow">Verify Independently</div>
+    <h2>Verify this yourself, in your own browser</h2>
+    <div class="verify-banner">
+        <strong>None of this asks our server for an answer.</strong> Your browser fetches the raw evidence bundle and
+        the public key, then recomputes the Merkle root and checks the Ed25519 signature itself, using native
+        WebCrypto (<code>crypto.subtle</code>) — no external library. <a href="#" onclick="return false;" style="color:#93c5fd;">View source</a> to read exactly what runs.
+    </div>
+    <div class="btn-row" style="margin-top:0;">
+        <button class="btn-primary" onclick="runVerification()" id="verifyBtn">Fetch bundle &amp; verify</button>
+        <button class="btn-ghost" onclick="downloadEvidenceBundle()" id="downloadBtn">⬇ Download evidence bundle</button>
+    </div>
+    <div class="verify-steps" id="verifySteps"></div>
+    <div class="reg-table">
+        <div class="info amber" style="margin-top:1rem;">
+            <strong>Take it away and verify it without us:</strong> the downloaded bundle can be checked completely
+            offline with <code>scripts/verify_bundle.py</code> — a standalone verifier that does not import anything
+            from this codebase, so it does not share code with the thing it verifies. See
+            <a href="https://github.com/omdch26/praman-evidence-engine/blob/main/docs/VERIFICATION.md" target="_blank" style="color:#2563eb;">docs/VERIFICATION.md</a>
+            for the exact command and a worked example by hand.
         </div>
     </div>
 </div>
@@ -445,10 +535,10 @@ footer a { color: #2563eb; text-decoration: none; }
     </div>
 
     <div class="roadmap-panel active" id="panel-shipped">
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Append-only event ledger</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">A Postgres trigger physically blocks UPDATE and DELETE. Records cannot be quietly rewritten, even by a database administrator.</div><div class="rm-note">This is enforced at the database layer, not application logic. An app-layer guard is bypassable by anyone with direct DB access, and that's exactly the threat model here.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Append-only event ledger</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">A Postgres trigger physically blocks UPDATE and DELETE. Records cannot be quietly rewritten, even by a database administrator.</div><div class="rm-note">This is enforced at the database layer, not application logic. An app-layer guard is bypassable by anyone with direct DB access, and that's exactly the threat model here. The "Try to edit the database" button above issues a real UPDATE and shows you Postgres's own rejection.</div></div>
         <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">HMAC chaining across both modules</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Every event is cryptographically linked to the one before it. Governance decisions from Module 2 chain into the same ledger as privacy events from Module 1.</div><div class="rm-note"><code>domain/hashing.py</code>. The client holds the key, so the vendor cannot forge an event even with full database access.</div></div>
         <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Merkle tree, root, and inclusion proofs</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Prove one specific event is in the record without disclosing any of the others.</div><div class="rm-note"><code>domain/merkle.py</code>. Leaves are prefixed <code>0x00</code>, internal nodes <code>0x01</code>, domain-separated to close the second-preimage weakness in the original Bitcoin construction (CVE-2012-2459).</div></div>
-        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Ed25519 signing</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">The root is signed. Anyone holding the public key can verify it independently, including a regulator, without trusting the bank.</div><div class="rm-note">Behind a <code>Signer</code> port. ECDSA P-256 and an HSM/KMS path are documented alternatives; swapping is one branch in <code>factories.py</code>.</div></div>
+        <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Ed25519 signing with a stable key</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">The root is signed with a key that does not change between requests. Anyone holding the public key can verify it independently, including a regulator, without trusting the bank.</div><div class="rm-note">Behind a <code>KeyCustody</code> port (<code>ports/key_custody.py</code>). ECDSA P-256 and an HSM/KMS path are documented alternatives; swapping is one branch in <code>factories.py</code>. See ADR 0014 — this used to generate a fresh, unpublished key per request, which meant no signature could ever be checked.</div></div>
         <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">BSA §63 certificate generation</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Produces a PDF in the "Certificate by Party" format: identifies the record, how it was produced, and its hash value and algorithm.</div><div class="rm-note">BSA 2023 came into force 1 July 2024, replacing the Indian Evidence Act 1872. §63 recognises two certificate types; this generates the party certificate, leaving Part B for the customer's CTO to attest.</div></div>
         <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Autonomy tiers + delegation ceilings</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">Four tiers from read-only to unrestricted. An agent cannot spawn a second agent with more authority than it holds itself.</div><div class="rm-note">Most AI-agent frameworks miss this entirely: an ACT_BOUNDED agent spawning an ACT_FULL child would silently defeat the whole tier system. Blocking that kind of privilege escalation through delegation is the point.</div></div>
         <div class="rm-item shipped"><div class="rm-head"><span class="rm-title">Circuit breaker with halt-as-evidence</span><span class="rm-badge shipped">Live</span></div><div class="rm-desc">When a threshold trips, the agent halts and falls back to human review. The halt itself is written to the ledger as evidence the control worked.</div><div class="rm-note">The halt is logged <em>before</em> fallback, so a regulator can see the safety mechanism firing, not just its aftermath.</div></div>
@@ -462,16 +552,16 @@ footer a { color: #2563eb; text-decoration: none; }
             undisclosed gap that costs a vendor its credibility on the first technical review.
         </div>
         <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Drift detection</span><span class="rm-badge stub">Deterministic stub</span><span class="rm-when">Real detector: Month 2</span></div><div class="rm-desc">Returns a reproducible score so demos are stable, but it measures nothing real. The circuit-breaker mechanism it feeds is fully working. Only the detection is placeholder.</div><div class="rm-note"><code>adapters/drift/deterministic_stub.py</code>. Production needs population stability index over a rolling reference window, plus semantic entropy for free-text outputs, which requires multiple sampled generations per call. That's a real latency and cost decision, not a weekend feature. <strong>Do not run Module 2 drift in production on this build; the stub will never trip.</strong></div></div>
-        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Per-tenant HMAC keys</span><span class="rm-badge stub">Fixed demo key</span><span class="rm-when">Month 2</span></div><div class="rm-desc">Currently one fixed key for every tenant. Enough to demonstrate chaining, not enough for real evidentiary separation between tenants.</div><div class="rm-note">Module 1 and Module 2 must chain with the <em>same</em> key or the chain breaks at the module boundary, so this is a key-custody design decision, not a one-line fix. It's deferred deliberately rather than decided prematurely.</div></div>
-        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">RFC 3161 timestamping</span><span class="rm-badge stub">Local clock</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Timestamps are currently self-asserted from the system clock. Under adversarial cross-examination that's the weakest link in the chain, and we'd rather say so than let a reviewer find it.</div><div class="rm-note"><code>adapters/anchor/rfc3161_freetsa.py</code> is designed but not implemented. It needs TSA selection, TLS, certificate validation, and outage handling. Until then, "when the root existed" rests on the bank's own clock.</div></div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">Per-tenant HMAC keys</span><span class="rm-badge stub">Fixed demo key</span><span class="rm-when">Month 2</span></div><div class="rm-desc">Currently one fixed key for every tenant. Enough to demonstrate chaining, not enough for real evidentiary separation between tenants. This is also why your browser can recompute HMACs itself in the "Verify this yourself" panel above — it only works because the demo key is intentionally public.</div><div class="rm-note">Module 1 and Module 2 must chain with the <em>same</em> key or the chain breaks at the module boundary, so this is a key-custody design decision, not a one-line fix. It's deferred deliberately rather than decided prematurely.</div></div>
+        <div class="rm-item stub"><div class="rm-head"><span class="rm-title">RFC 3161 timestamping</span><span class="rm-badge stub">Local clock</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Timestamps are currently self-asserted from the system clock. Under adversarial cross-examination that's the weakest link in the chain, and we'd rather say so than let a reviewer find it. A vendor who controlled both the ledger and the clock could, in principle, re-sign a doctored history after the fact — external anchoring is what closes that gap, and it is not built yet.</div><div class="rm-note"><code>adapters/anchor/rfc3161_freetsa.py</code> is designed but not implemented. It needs TSA selection, TLS, certificate validation, and outage handling. Until then, "when the root existed" rests on the bank's own clock.</div></div>
     </div>
 
     <div class="roadmap-panel" id="panel-future">
         <div class="rm-item future"><div class="rm-head"><span class="rm-title">PSI + semantic entropy drift detectors</span><span class="rm-badge future">Next</span><span class="rm-when">Month 2–4</span></div><div class="rm-desc">Real drift measurement across data distribution, output semantics, and behaviour, replacing the stub behind the same interface.</div><div class="rm-note">Swapping is one branch in <code>factories.py</code>. Nothing else in the system changes, because that's what the port is for.</div></div>
         <div class="rm-item future"><div class="rm-head"><span class="rm-title">DPDP Consent Manager integration</span><span class="rm-badge future">Next</span><span class="rm-when">Tracking Nov 2026</span></div><div class="rm-desc">The Consent Manager framework under the DPDP Rules is being operationalised now, with the next enforcement phase in November 2026. Consent artefacts flow straight into the evidence ledger.</div><div class="rm-note">DPDP Rules 2025 were notified 14 Nov 2025 (G.S.R. 846(E)) with phased dates of 14 Nov 2025, 14 Nov 2026 and 14 May 2027. This feature targets the second phase.</div></div>
         <div class="rm-item future"><div class="rm-head"><span class="rm-title">OPA / Rego policy engine</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Banks already standardised on Open Policy Agent will not adopt a bespoke rule language. This makes Praman fit their existing stack instead of replacing it.</div><div class="rm-note">Designed in <code>docs/ADR/0004-policy-engine.md</code>. The <code>PolicyEngine</code> port already exists, so this is a new adapter, not a rewrite.</div></div>
-        <div class="rm-item future"><div class="rm-head"><span class="rm-title">HSM / KMS signing path</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Hardware-held keys. Most bank security teams will require this before any production sign-off.</div><div class="rm-note">The <code>Signer</code> port already abstracts this. The remaining work is integration and key-ceremony documentation, not redesign.</div></div>
-        <div class="rm-item future"><div class="rm-head"><span class="rm-title">Regulator verification portal</span><span class="rm-badge future">Exploring</span><span class="rm-when">Month 4+</span></div><div class="rm-desc">A read-only view where an auditor pastes a certificate and independently verifies the root, without needing access to the bank's systems at all.</div><div class="rm-note">Verification only needs the public key and the root, so this can run entirely outside the bank's perimeter, independent of the bank vouching for it.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">HSM / KMS signing path</span><span class="rm-badge future">Planned</span><span class="rm-when">Month 3</span></div><div class="rm-desc">Hardware-held keys. Most bank security teams will require this before any production sign-off.</div><div class="rm-note">The <code>KeyCustody</code> port already abstracts this (<code>adapters/key_custody/hsm_kms.py</code> documents the path); the remaining work is integration and key-ceremony documentation, not redesign.</div></div>
+        <div class="rm-item future"><div class="rm-head"><span class="rm-title">Regulator verification portal</span><span class="rm-badge future">Exploring</span><span class="rm-when">Month 4+</span></div><div class="rm-desc">A read-only view where an auditor pastes a certificate and independently verifies the root, without needing access to the bank's systems at all.</div><div class="rm-note">Verification only needs the public key and the root, so this can run entirely outside the bank's perimeter, independent of the bank vouching for it. The "Verify this yourself" panel above and <code>scripts/verify_bundle.py</code> are the building blocks this portal would be built from.</div></div>
         <div class="rm-item future"><div class="rm-head"><span class="rm-title">Load testing + external security audit</span><span class="rm-badge future">Required pre-production</span><span class="rm-when">Month 2–3</span></div><div class="rm-desc">Throughput limits are currently unmeasured and no penetration test has been done. Both are gates before anyone should run this on real customer data.</div><div class="rm-note">Listed openly in LIMITATIONS.md. A vendor who cannot tell you their untested assumptions has not looked for them.</div></div>
     </div>
 </div>
@@ -479,6 +569,7 @@ footer a { color: #2563eb; text-decoration: none; }
 <footer>
     <a href="https://github.com/omdch26/praman-evidence-engine" target="_blank">GitHub</a> ·
     <a href="https://praman-evidence-engine.onrender.com/health" target="_blank">Live backend health check</a> ·
+    <a href="https://github.com/omdch26/praman-evidence-engine/blob/main/docs/VERIFICATION.md" target="_blank">How to verify by hand</a> ·
     Built for regulated AI in India
 </footer>
 
@@ -487,6 +578,66 @@ footer a { color: #2563eb; text-decoration: none; }
 <script>
 const API_URL = 'https://praman-evidence-engine.onrender.com';
 
+// Per-session tenant, matching the backend's demo tenant pattern exactly
+// (praman/api/routers/demonstration.py: ^demo-[a-z0-9]{8}$). Generated once
+// per page load so concurrent visitors never collide in one shared ledger.
+function randomDemoTenant() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let s = '';
+    const bytes = crypto.getRandomValues(new Uint8Array(8));
+    for (let i = 0; i < 8; i++) s += chars[bytes[i] % chars.length];
+    return 'demo-' + s;
+}
+const TENANT_ID = randomDemoTenant();
+document.getElementById('tenantIdDisplay').textContent = TENANT_ID;
+
+// ---------------------------------------------------------------------
+// Request log — every fetch() the page makes is recorded here, visible
+// with the expert toggle on. A reviewer watching the network tab should
+// see exactly what this panel claims: method, URL, status, round-trip ms.
+// ---------------------------------------------------------------------
+function logRequest(method, url, status, ms, ok) {
+    const log = document.getElementById('reqlog');
+    const empty = document.getElementById('reqlogEmpty');
+    if (empty) empty.remove();
+    const row = document.createElement('div');
+    row.className = 'reqlog-row';
+    row.innerHTML = `
+        <span class="reqlog-method">${method}</span>
+        <span class="reqlog-url">${url.replace(API_URL, '')}</span>
+        <span class="reqlog-status ${ok ? 'ok' : 'err'}">${status}</span>
+        <span class="reqlog-ms">${ms}ms</span>`;
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+}
+
+// Wraps fetch() so every real backend call is logged and timed uniformly.
+// Every call in this file that talks to the API goes through this — never
+// a bare fetch() — so the log panel's claim ("every call is shown here")
+// stays true as the file grows.
+async function apiCall(method, path, body) {
+    const url = `${API_URL}${path}`;
+    const start = performance.now();
+    try {
+        const resp = await fetch(url, {
+            method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Tenant-ID': TENANT_ID,
+            },
+            body: body ? JSON.stringify(body) : undefined,
+        });
+        const ms = Math.round(performance.now() - start);
+        const data = await resp.json().catch(() => null);
+        logRequest(method, url, resp.status, ms, resp.ok);
+        return { ok: resp.ok, status: resp.status, data };
+    } catch (err) {
+        const ms = Math.round(performance.now() - start);
+        logRequest(method, url, 'ERR', ms, false);
+        return { ok: false, status: 0, data: null, error: err };
+    }
+}
+
 // Real health check against the live backend — proves this isn't a mockup
 fetch(`${API_URL}/health`).then(r => r.json()).then(d => {
     document.getElementById('liveDot').className = 'dot ok';
@@ -494,7 +645,7 @@ fetch(`${API_URL}/health`).then(r => r.json()).then(d => {
         `Backend live — v${d.version}, ${d.environment} mode, both modules active`;
 }).catch(() => {
     document.getElementById('liveDot').className = 'dot bad';
-    document.getElementById('liveText').textContent = 'Backend waking up (free tier cold start ~60s) — ledger demo below works regardless';
+    document.getElementById('liveText').textContent = 'Backend waking up (free tier cold start ~60s) — try Generate again in a moment';
 });
 
 function toggleExpert() {
@@ -508,19 +659,15 @@ function showPanel(name) {
         p.classList.toggle('active', p.id === 'panel-' + name));
 }
 
-function chainHash(seed) {
+// ---------------------------------------------------------------------
+// Offline fallback hash — used ONLY when the backend is unreachable
+// (cold start, network issue). Every place this is used says so on
+// screen; a local hash is never presented as if the server computed it.
+// ---------------------------------------------------------------------
+function chainHashOffline(seed) {
     // FNV-1a to absorb the seed, then xorshift32 to emit hex nibbles.
-    //
-    // Nibbles are taken from the HIGH bits (>>> 28), never `% 16`. The low bits of
-    // a linear generator have a very short period, so masking them collapses
-    // distinct inputs to the same output. That would silently break the one
-    // property this whole demo exists to show: that editing an event changes the
-    // root. This function is not cryptographic and not suitable for real evidence
-    // chains (use HMAC-SHA256 server-side). For this demo, the birthday bound is
-    // ~65k hashes before expected collision; we use ~6/session, well below that.
-    //
-    // This is a display stand-in for the real HMAC-SHA256 chain computed
-    // server-side in domain/hashing.py. Same structure, not the same primitive.
+    // Not cryptographic — see domain/hashing.py for the real HMAC-SHA256
+    // this stands in for when the backend cannot be reached at all.
     let h = 0x811c9dc5;
     for (let i = 0; i < seed.length; i++) {
         h ^= seed.charCodeAt(i);
@@ -536,10 +683,13 @@ function chainHash(seed) {
     return s;
 }
 
-let tampered = false;
+let lastEventIds = [];
 
-function generateLedger() {
-    tampered = false;
+async function generateLedger() {
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    lastEventIds = [];
+
     const bank = document.getElementById('bankName').value;
     const amount = document.getElementById('loanAmount').value;
     const tier = document.getElementById('tier').value;
@@ -547,38 +697,74 @@ function generateLedger() {
     const allowed = tier === 'ACT_BOUNDED' && risk <= 0.65;
     const decision = allowed ? 'APPROVED' : 'DENIED';
 
-    const events = [
-        { t: '2:30 PM', d: `Customer grants consent to AI evaluation (${bank})` },
-        { t: '2:31 PM', d: `AI system assigned autonomy tier: ${tier}` },
-        { t: '2:32 PM', d: `Risk evaluation complete — score ${risk} (threshold 0.65)` },
-        { t: '2:33 PM', d: `Authority check: can this tier decide on ${amount}?` },
-        { t: '2:34 PM', d: `DECISION: ${decision}`, decision: true },
-        { t: '2:35 PM', d: decision === 'APPROVED' ? 'Loan disbursed to customer account' : 'Customer notified of denial + reason' }
+    const descriptions = [
+        `Customer grants consent to AI evaluation (${bank})`,
+        `AI system assigned autonomy tier: ${tier}`,
+        `Risk evaluation complete — score ${risk} (threshold 0.65)`,
+        `Authority check: can this tier decide on ${amount}?`,
+        `DECISION: ${decision}`,
+        decision === 'APPROVED' ? 'Loan disbursed to customer account' : 'Customer notified of denial + reason',
     ];
 
-    let prevHash = '0000000000000000';
-    const html = events.map((e, i) => {
-        const canonical = JSON.stringify({ seq: i, event: e.d, prev: prevHash });
-        const hash = chainHash(canonical);
-        const row = `
+    const rows = [];
+    let offlineMode = false;
+    let prevHashOffline = '0000000000000000';
+
+    for (let i = 0; i < descriptions.length; i++) {
+        const result = await apiCall('POST', '/events', {
+            event_type: i === 4 ? 'decision' : `scenario_step_${i}`,
+            module: 'ai_risk',
+            principal_id_hash: 'sha256:demo-principal',
+            action: descriptions[i],
+            payload: { bank, amount, tier, risk, step: i },
+        });
+
+        if (result.ok && result.data) {
+            lastEventIds.push(result.data.event_id);
+            rows.push({
+                desc: descriptions[i],
+                decision: i === 4,
+                detail: `event_id:    ${result.data.event_id}\nhmac_sha256: ${result.data.hmac_value}\n(computed server-side — see the request log above)`,
+            });
+        } else {
+            // Backend unreachable: fall back to a local display hash, and
+            // say so plainly. Never let this look like a server response.
+            offlineMode = true;
+            const canonical = JSON.stringify({ seq: i, event: descriptions[i], prev: prevHashOffline });
+            const hash = chainHashOffline(canonical);
+            rows.push({
+                desc: descriptions[i],
+                decision: i === 4,
+                detail: `OFFLINE FALLBACK — backend unreachable, this hash is computed in your\nbrowser and is NOT cryptographic evidence:\ncanonical: ${canonical}\nhash:      ${hash}`,
+            });
+            prevHashOffline = hash;
+        }
+    }
+
+    const html = rows.map((r, i) => `
         <div class="event" id="event-${i}">
             <div class="event-top">
                 <div class="event-icon">✓</div>
-                <div class="event-time">${e.t}</div>
-                <div class="event-desc ${e.decision ? 'decision' : ''}">${e.d}</div>
+                <div class="event-desc ${r.decision ? 'decision' : ''}">${r.desc}</div>
             </div>
-            <div class="expert-detail">
-canonical_json: ${canonical}
-hmac_sha256:    ${hash}...
-prev_hmac:      ${prevHash}...</div>
-        </div>`;
-        prevHash = hash;
-        return row;
-    }).join('');
+            <div class="expert-detail">${r.detail}</div>
+        </div>`).join('');
 
     document.getElementById('ledger').innerHTML = html;
     document.getElementById('verifyPanel').style.display = 'block';
-    updateVerification(false, prevHash);
+    document.getElementById('tamperResult').className = 'tamper-result';
+    resetVerifySteps();
+
+    if (offlineMode) {
+        updateVerification(false, '(offline — backend unreachable, nothing to verify server-side)', true);
+    } else {
+        // Fetch the real evidence bundle to show the real root, the same
+        // one GET /evidence/bundle and the verify panel below will use.
+        const bundleResult = await apiCall('GET', '/evidence/bundle');
+        if (bundleResult.ok && bundleResult.data) {
+            updateVerification(false, bundleResult.data.merkle_root, false);
+        }
+    }
 
     // Governance panel
     const govBox = document.getElementById('govResult');
@@ -595,13 +781,15 @@ prev_hmac:      ${prevHash}...</div>
         }
         govBox.innerHTML = `<div class="verify-item fail"><div class="check">✗</div><div><div class="t">Blocked</div><div class="d">${reason}</div></div></div>`;
     }
+
+    btn.disabled = false;
 }
 
-function updateVerification(fail, rootHash) {
+function updateVerification(fail, rootDisplay, offline) {
     const items = [
         ['v1', 'v1t', fail ? 'Chain integrity: BROKEN' : 'Chain integrity: unbroken'],
         ['v2', 'v2t', fail ? 'Tamper-proof: NO — tampering detected' : 'Tamper-proof: yes'],
-        ['v3', 'v3t', fail ? 'Court-admissible: NO — evidence compromised' : 'Court-admissible: yes']
+        ['v3', 'v3t', fail ? 'Court-admissible: NO — evidence compromised' : 'Court-admissible: yes'],
     ];
     items.forEach(([id, tid, text]) => {
         const el = document.getElementById(id);
@@ -611,27 +799,319 @@ function updateVerification(fail, rootHash) {
     });
     const rootBox = document.getElementById('rootBox');
     rootBox.className = 'root-box' + (fail ? ' fail' : '');
-    rootBox.textContent = `merkle_root: ${rootHash}${fail ? '  ← changed! does not match signed certificate' : ''}`;
+    const prefix = offline ? 'merkle_root (offline fallback): ' : 'merkle_root: ';
+    rootBox.textContent = `${prefix}${rootDisplay}${fail ? '  ← changed! does not match signed certificate' : ''}`;
 }
 
-function tamperEvent() {
-    if (!document.getElementById('event-0')) return;
-    tampered = true;
-    const ev = document.getElementById('event-4');
-    ev.classList.add('bad');
-    ev.querySelector('.event-icon').textContent = '✗';
-    ev.querySelector('.event-icon').style.background = '#fee2e2';
-    ev.querySelector('.event-icon').style.color = '#dc2626';
-    const desc = ev.querySelector('.event-desc');
-    desc.textContent = 'DECISION: DENIED  ← silently edited after the fact';
-    updateVerification(true, chainHash('tampered' + Date.now()));
+// ---------------------------------------------------------------------
+// Tamper mode 1: Try to edit the database (Layer 2)
+// Calls the real, gated POST /demo/tamper-attempt endpoint, which issues
+// a genuine UPDATE against the events table and returns Postgres's own
+// rejection, unmodified. See ADR 0015.
+// ---------------------------------------------------------------------
+async function tryEditDatabase() {
+    if (lastEventIds.length === 0) return;
+    const targetEventId = lastEventIds[4] || lastEventIds[lastEventIds.length - 1];
+
+    const result = await apiCall('POST', '/demo/tamper-attempt', {
+        event_id: targetEventId,
+        new_payload: 'TAMPERED — silently edited after the fact',
+    });
+
+    const box = document.getElementById('tamperResult');
+    box.className = 'tamper-result show';
+
+    if (!result.ok) {
+        box.className = 'tamper-result show rejected';
+        box.textContent = `HTTP ${result.status}\n\n${result.data ? JSON.stringify(result.data, null, 2) : 'Demo mode is disabled on this deployment, or this event does not belong to your session.'}`;
+        return;
+    }
+
+    const body = result.data;
+    if (body.succeeded) {
+        // This would mean the append-only trigger failed — a real finding,
+        // not expected behaviour. Report it exactly as such.
+        box.className = 'tamper-result show succeeded';
+        box.textContent = `UNEXPECTED: the database accepted the edit.\n\n${JSON.stringify(body, null, 2)}`;
+    } else {
+        box.className = 'tamper-result show rejected';
+        box.textContent = `PostgreSQL rejected the write:\n\nsql_state: ${body.sql_state}\ndatabase_error: ${body.database_error}\n\n${body.explanation}`;
+    }
+}
+
+// ---------------------------------------------------------------------
+// Tamper mode 2: Assume an attacker got past the database
+// Mutates ONE event in a local copy of the real bundle, then re-runs the
+// IDENTICAL verifier function used by the green "Fetch bundle & verify"
+// path above (runVerification -> verifyEvidenceBundle). This is
+// deliberately not a parallel "make it fail" routine — using the same
+// function for both the pass and fail cases is what makes this
+// non-riggable. Do not split this into two code paths in a future
+// refactor.
+// ---------------------------------------------------------------------
+async function assumeAttackerPastDatabase() {
+    const box = document.getElementById('tamperResult');
+    box.className = 'tamper-result show';
+    box.textContent = 'Fetching the real bundle, then mutating one event locally and re-verifying…';
+
+    await runVerification({ tamperSequenceIndex: 2 });
+
+    box.textContent =
+        'Bundle event at sequence 2 was altered in a local copy only (nothing sent to the server).\n' +
+        'The SAME verifier used for the green path above just ran against the altered copy — see the\n' +
+        '"Verify this yourself" panel for the result.';
 }
 
 function resetDemo() {
     document.getElementById('ledger').innerHTML = '<p style="color:#9ca3af; padding:1rem 0;">Build a scenario above, then generate the ledger.</p>';
     document.getElementById('verifyPanel').style.display = 'none';
     document.getElementById('govResult').innerHTML = '';
-    tampered = false;
+    document.getElementById('tamperResult').className = 'tamper-result';
+    lastEventIds = [];
+    resetVerifySteps();
+}
+
+// ---------------------------------------------------------------------
+// Layer 3: client-side verification using native WebCrypto.
+//
+// Steps, run in order, each ticking green as it completes:
+//   1. Fetch the bundle and the public key (two separate calls).
+//   2. For each event: recompute its HMAC from canonical_json, confirm
+//      it matches the bundle's claimed hmac_value (chained).
+//   3. Rebuild the Merkle tree in-browser (0x00/0x01 domain separation).
+//   4. Compare the locally computed root against the server's claimed root.
+//   5. crypto.subtle.verify() the signature against the LOCALLY COMPUTED
+//      root — never the server's claimed root. Verifying the server's own
+//      number against the server's own signature would prove nothing.
+//
+// Browser fallback: if Ed25519 is not supported by crypto.subtle, steps
+// 1-4 still run (SHA-256 is universal) and step 5 is shown as
+// "Not supported in this browser" — never silently skipped while the
+// panel looks fully green.
+// ---------------------------------------------------------------------
+
+function resetVerifySteps() {
+    document.getElementById('verifySteps').innerHTML = '';
+}
+
+function renderStep(id, label, state, value) {
+    let container = document.getElementById('vstep-' + id);
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'vstep-' + id;
+        document.getElementById('verifySteps').appendChild(container);
+    }
+    const icon = state === 'pass' ? '✓' : state === 'fail' ? '✗' : state === 'skip' ? '!' : '…';
+    container.className = 'vstep' + (state === 'pass' ? ' pass' : state === 'fail' ? ' fail' : state === 'skip' ? ' skip' : '');
+    container.innerHTML = `
+        <div class="vicon">${icon}</div>
+        <div class="vlabel">${label}</div>
+        ${value ? `<div class="vvalue">${value}</div>` : ''}`;
+}
+
+async function sha256Hex(bytes) {
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function concatBytes(...arrays) {
+    const total = arrays.reduce((sum, a) => sum + a.length, 0);
+    const out = new Uint8Array(total);
+    let offset = 0;
+    for (const a of arrays) { out.set(a, offset); offset += a.length; }
+    return out;
+}
+
+function hexToBytes(hex) {
+    const out = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+    return out;
+}
+
+// HMAC-SHA256 via WebCrypto, matching praman/domain/hashing.py exactly:
+// message = previous_hmac_bytes + canonical_bytes (or just canonical_bytes
+// for the first event), keyed with the disclosed fixed demo key.
+async function hmacSha256Hex(canonicalBytes, previousHmacHex, keyBytes) {
+    const cryptoKey = await crypto.subtle.importKey(
+        'raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const message = previousHmacHex
+        ? concatBytes(hexToBytes(previousHmacHex), canonicalBytes)
+        : canonicalBytes;
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, message);
+    return [...new Uint8Array(signature)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Merkle leaf/node hashing, matching praman/domain/merkle.py exactly:
+// LEAF_PREFIX = 0x00, NODE_PREFIX = 0x01, SHA-256 over prefix + data.
+async function hashLeaf(hmacHex) {
+    return sha256Hex(concatBytes(new Uint8Array([0x00]), hexToBytes(hmacHex)));
+}
+async function hashNode(leftHex, rightHex) {
+    return sha256Hex(concatBytes(new Uint8Array([0x01]), hexToBytes(leftHex), hexToBytes(rightHex)));
+}
+async function computeMerkleRoot(hmacHexList) {
+    let level = await Promise.all(hmacHexList.map(hashLeaf));
+    while (level.length > 1) {
+        const next = [];
+        for (let i = 0; i < level.length; i += 2) {
+            const left = level[i];
+            const right = i + 1 < level.length ? level[i + 1] : left; // odd-node duplication
+            next.push(await hashNode(left, right));
+        }
+        level = next;
+    }
+    return level[0];
+}
+
+// The one function both tamper modes and the plain "verify" button call.
+// See the comment on assumeAttackerPastDatabase() above for why this must
+// never be split into a separate "make it fail" routine.
+async function verifyEvidenceBundle(events, claimedRootHex, signatureHex, publicKeyRawHex) {
+    const HMAC_KEY = new Uint8Array(32); // disclosed fixed demo key, all zero bytes
+
+    // Step 2: HMAC chain continuity
+    let previousHmacHex = null;
+    let hmacDivergence = null;
+    for (const event of events) {
+        const canonicalBytes = new TextEncoder().encode(event.canonical_json);
+        const recomputed = await hmacSha256Hex(canonicalBytes, previousHmacHex, HMAC_KEY);
+        if (recomputed !== event.hmac_value) {
+            hmacDivergence = event.sequence;
+            break;
+        }
+        previousHmacHex = event.hmac_value;
+    }
+    const hmacPassed = hmacDivergence === null;
+
+    // Step 3+4: recompute root, compare to claimed
+    const recomputedRoot = await computeMerkleRoot(events.map(e => e.hmac_value));
+    const rootMatches = recomputedRoot === claimedRootHex;
+
+    // Step 5: verify signature against the LOCALLY RECOMPUTED root
+    let signatureResult = 'unsupported';
+    try {
+        const publicKey = await crypto.subtle.importKey(
+            'raw', hexToBytes(publicKeyRawHex), { name: 'Ed25519' }, false, ['verify']
+        );
+        const valid = await crypto.subtle.verify(
+            { name: 'Ed25519' }, publicKey, hexToBytes(signatureHex), hexToBytes(recomputedRoot)
+        );
+        signatureResult = valid ? 'pass' : 'fail';
+    } catch (err) {
+        signatureResult = 'unsupported';
+    }
+
+    return {
+        hmacPassed, hmacDivergence,
+        rootMatches, recomputedRoot, claimedRootHex,
+        signatureResult,
+        overallPassed: hmacPassed && rootMatches && signatureResult === 'pass',
+    };
+}
+
+// tamperOptions: { tamperSequenceIndex } — if set, mutates that event's
+// hmac_value in the LOCAL copy only, before verifying. Nothing is ever
+// sent back to the server in this mode.
+async function runVerification(tamperOptions) {
+    const btn = document.getElementById('verifyBtn');
+    btn.disabled = true;
+    resetVerifySteps();
+
+    renderStep('fetch-bundle', 'Fetching evidence bundle from GET /evidence/bundle…', 'running');
+    const bundleResult = await apiCall('GET', '/evidence/bundle');
+    if (!bundleResult.ok) {
+        renderStep('fetch-bundle', 'Fetch evidence bundle', 'fail', `HTTP ${bundleResult.status} — generate a ledger above first`);
+        btn.disabled = false;
+        return;
+    }
+    renderStep('fetch-bundle', 'Fetched evidence bundle', 'pass', `${bundleResult.data.events.length} events, root ${bundleResult.data.merkle_root.slice(0, 16)}…`);
+
+    renderStep('fetch-key', 'Fetching public key from GET /keys/public…', 'running');
+    const keyResult = await apiCall('GET', '/keys/public');
+    if (!keyResult.ok) {
+        renderStep('fetch-key', 'Fetch public key', 'fail', `HTTP ${keyResult.status}`);
+        btn.disabled = false;
+        return;
+    }
+    renderStep('fetch-key', 'Fetched public key', 'pass', `key_id ${keyResult.data.key_id}`);
+
+    let events = bundleResult.data.events;
+    if (tamperOptions && typeof tamperOptions.tamperSequenceIndex === 'number') {
+        events = events.map(e => ({ ...e }));
+        const target = events[tamperOptions.tamperSequenceIndex];
+        if (target) {
+            target.hmac_value = 'f'.repeat(64); // simulate a database row altered by an attacker
+            renderStep('tamper-note', `Locally altered event #${target.sequence}'s hmac_value (nothing sent to server)`, 'skip');
+        }
+    }
+
+    renderStep('hmac-chain', 'Recomputing HMAC chain in your browser…', 'running');
+    renderStep('merkle-root', 'Rebuilding Merkle tree in your browser…', 'running');
+    renderStep('signature', 'Verifying Ed25519 signature against the recomputed root…', 'running');
+
+    const result = await verifyEvidenceBundle(
+        events,
+        bundleResult.data.merkle_root,
+        bundleResult.data.signature,
+        keyResult.data.public_key_raw_hex
+    );
+
+    renderStep(
+        'hmac-chain',
+        result.hmacPassed ? 'HMAC chain: every event matches, in order' : `HMAC chain: mismatch at event #${result.hmacDivergence}`,
+        result.hmacPassed ? 'pass' : 'fail'
+    );
+    renderStep(
+        'merkle-root',
+        result.rootMatches ? 'Merkle root: your browser\'s root matches the server\'s claimed root' : 'Merkle root: MISMATCH',
+        result.rootMatches ? 'pass' : 'fail',
+        `yours: ${result.recomputedRoot.slice(0, 24)}…  server: ${result.claimedRootHex.slice(0, 24)}…`
+    );
+    if (result.signatureResult === 'unsupported') {
+        renderStep('signature', 'Signature check: Ed25519 not supported in this browser', 'skip', 'Use scripts/verify_bundle.py, or a current Chrome/Firefox/Safari');
+    } else {
+        renderStep(
+            'signature',
+            result.signatureResult === 'pass' ? 'Signature verifies against YOUR recomputed root' : 'Signature does NOT verify',
+            result.signatureResult
+        );
+    }
+
+    renderStep(
+        'overall',
+        result.overallPassed ? 'PASSED — every check ran in your browser, independent of our server' : 'FAILED — tampering detected',
+        result.overallPassed ? 'pass' : 'fail'
+    );
+
+    btn.disabled = false;
+}
+
+// ---------------------------------------------------------------------
+// Layer 4: take the bundle away and verify it without us.
+// ---------------------------------------------------------------------
+async function downloadEvidenceBundle() {
+    const btn = document.getElementById('downloadBtn');
+    btn.disabled = true;
+
+    const bundleResult = await apiCall('GET', '/evidence/bundle');
+    if (!bundleResult.ok) {
+        alert('Could not fetch a bundle to download — generate a ledger above first.');
+        btn.disabled = false;
+        return;
+    }
+
+    const blob = new Blob([JSON.stringify(bundleResult.data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `praman-evidence-bundle-${TENANT_ID}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    btn.disabled = false;
 }
 </script>
 </body>
