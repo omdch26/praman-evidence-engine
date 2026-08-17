@@ -433,7 +433,7 @@ footer a { color: #2563eb; text-decoration: none; }
     <div class="verify-banner">
         <strong>None of this asks our server for an answer.</strong> Your browser fetches the raw evidence bundle and
         the public key, then recomputes the Merkle root and checks the Ed25519 signature itself, using native
-        WebCrypto (<code>crypto.subtle</code>) — no external library. <a href="#" onclick="return false;" style="color:#93c5fd;">View source</a> to read exactly what runs.
+        WebCrypto (<code>crypto.subtle</code>) — no external library. <a href="https://github.com/omdch26/praman-evidence-engine/blob/main/frontend/demo.html" target="_blank" rel="noopener" style="color:#93c5fd;">View source</a> to read exactly what runs.
     </div>
     <div class="btn-row" style="margin-top:0;">
         <button class="btn-primary" onclick="runVerification()" id="verifyBtn">Fetch bundle &amp; verify</button>
