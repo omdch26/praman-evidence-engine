@@ -23,6 +23,7 @@ Example: A bank wants OPA instead of JSON rules.
 """
 
 from praman.config import Settings
+from praman.ports.certificate_renderer import CertificateRenderer
 from praman.ports.key_custody import KeyCustody
 
 
@@ -58,3 +59,32 @@ def build_key_custody(settings: Settings) -> KeyCustody:
             return HsmKmsKeyCustody()
         case unknown:
             raise ValueError(f"Unknown key_custody_provider: {unknown!r}")
+
+
+def build_certificate_renderer(settings: Settings) -> CertificateRenderer:
+    """
+    Select the certificate rendering adapter named in configuration.
+
+    Raises on an unknown provider rather than silently choosing one:
+    a certificate served in a format the operator did not configure is a
+    handover-integrity failure, not a convenience.
+
+    Args:
+        settings: Application settings (config.py).
+
+    Returns:
+        A CertificateRenderer implementation, ready to render bytes.
+
+    Raises:
+        ValueError: If certificate_renderer_provider names an adapter that
+            does not exist.
+    """
+    match settings.certificate_renderer_provider:
+        case "reportlab":
+            from praman.adapters.certificate.reportlab_renderer import (
+                ReportLabCertificateRenderer,
+            )
+
+            return ReportLabCertificateRenderer()
+        case unknown:
+            raise ValueError(f"Unknown certificate_renderer_provider: {unknown!r}")

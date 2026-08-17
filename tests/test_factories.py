@@ -15,8 +15,9 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from praman.config import Settings
-from praman.factories import build_key_custody
+from praman.factories import build_certificate_renderer, build_key_custody
 from praman.adapters.key_custody.environment_key import EnvironmentKeyCustody
+from praman.adapters.certificate.reportlab_renderer import ReportLabCertificateRenderer
 
 
 def _settings_with(**overrides) -> Settings:
@@ -60,3 +61,18 @@ class TestBuildKeyCustody:
 
         with pytest.raises(ValueError, match="Unknown key_custody_provider"):
             build_key_custody(settings)
+
+
+class TestBuildCertificateRenderer:
+    def test_reportlab_provider_returns_reportlab_renderer(self):
+        settings = _settings_with(certificate_renderer_provider="reportlab")
+
+        renderer = build_certificate_renderer(settings)
+
+        assert isinstance(renderer, ReportLabCertificateRenderer)
+
+    def test_unknown_provider_raises_value_error(self):
+        settings = _settings_with(certificate_renderer_provider="latex")
+
+        with pytest.raises(ValueError, match="Unknown certificate_renderer_provider"):
+            build_certificate_renderer(settings)

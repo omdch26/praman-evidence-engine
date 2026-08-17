@@ -80,10 +80,10 @@ Local timestamps are self-asserted (the bank asserts when the root existed). Und
 
 ### Certificate Rendering — ReportLab, BSA §63 Format
 
-**Location:** `adapters/certificate/reportlab_bsa63.py` (shipped with placeholders)
+**Location:** `adapters/certificate/reportlab_renderer.py` (real PDF, via the `CertificateRenderer` port — see ADR 0017)
 
 **What it does:**
-Renders a PDF modelled on the BSA §63 Schedule certificate format. Part A: description of the electronic record and how it was produced (includes hash value and algorithm). Part B: person responsible for the system attesting it was operating properly.
+Renders a real PDF (not text-as-bytes) modelled on the BSA §63 Schedule certificate format. Part A: description of the electronic record and how it was produced (includes hash value, algorithm, Ed25519 signature, and key ID — all real, signed values). Part B: person responsible for the system attesting it was operating properly.
 
 **Why Part B is a stub:**
 The Schedule requires Part B to be completed by "the person responsible for the electronic record generating system." In practice:
@@ -107,6 +107,21 @@ The certificate is modelled on the Schedule format and includes the required has
 
 **Production approach:**
 Implement e-signature integration (eSignature service, DocuSign, etc.) so Part B can be signed digitally without print/scan cycles. This is Month 3 work.
+
+---
+
+### Certificate ID — Not Persisted
+
+**Location:** `api/routers/certificates.py`, `POST /certificates/generate` — `"certificate_id": 1  # STUB: would be persisted`
+
+**What it does:**
+Returns a hardcoded `certificate_id` of `1` on every call. This is a separate, narrower stub from the PDF rendering above — the PDF itself is real and signed; only the *record of having generated a certificate* is not persisted anywhere.
+
+**Why it's still a stub after the PDF became real:**
+Persisting certificate generations (who requested one, for what range, when) is a `persistence/` and `services/` change orthogonal to rendering format. Fixing the PDF did not require it, so it was left disclosed rather than bundled into an unrelated change.
+
+**Production approach:**
+Add a `Certificate` table row per generation, returned as the real `certificate_id`. Needed before a customer can ask "show me every certificate we've ever generated."
 
 ---
 

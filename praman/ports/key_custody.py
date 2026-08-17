@@ -7,7 +7,7 @@ Responsibility
 
 Must not
     Generate a key on demand (that produces a different key per call, which
-    is the exact bug this port exists to prevent — see ADR 0013).
+    is the exact bug this port exists to prevent — see ADR 0014).
     Perform network calls itself (an HSM/KMS adapter may, but that is its
     own concern, not this contract's).
 

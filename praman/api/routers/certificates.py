@@ -26,17 +26,15 @@ Certificate structure (modelled on BSA §63 Schedule):
 from fastapi import APIRouter, Depends, HTTPException, Header, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from datetime import datetime
-import io
 
-from praman.dependencies import get_key_custody
+from praman.dependencies import get_certificate_renderer, get_key_custody
 from praman.persistence.database import get_db
-from praman.persistence.models import Event as EventModel, Certificate as CertificateModel
-from praman.domain.canonical import canonicalise
-from praman.domain.hashing import compute_hmac_hex
+from praman.persistence.models import Event as EventModel
 from praman.domain.merkle import compute_root_hex
 from praman.domain.signing import sign_root_hex
+from praman.ports.certificate_renderer import CertificateRenderer
 from praman.ports.key_custody import KeyCustody
 
 router = APIRouter()
@@ -77,7 +75,7 @@ async def get_latest_certificate(
     hmacs = [e.hmac_value for e in events]
     root_hex = compute_root_hex(hmacs)
 
-    # Sign with the process's stable key (see ADR 0013 — this used to call
+    # Sign with the process's stable key (see ADR 0014 — this used to call
     # generate_keypair() per request, producing a signature nobody could
     # ever verify because the public key was thrown away with the private
     # key on every call).
@@ -99,13 +97,15 @@ async def get_latest_certificate(
 async def get_certificate_pdf(
     certificate_id: int,
     db: Session = Depends(get_db),
+    key_custody: KeyCustody = Depends(get_key_custody),
+    certificate_renderer: CertificateRenderer = Depends(get_certificate_renderer),
     tenant_id: str = Header(..., alias="X-Tenant-ID"),
 ) -> StreamingResponse:
     """
     Retrieve a certificate as PDF.
 
     Generates a BSA §63 certificate on demand (not stored).
-    Part A is populated automatically. Part B is a template.
+    Part A is populated automatically and signed. Part B is a template.
 
     Headers:
         X-Tenant-ID: Unique customer identifier (required)
@@ -116,7 +116,6 @@ async def get_certificate_pdf(
     Returns:
         PDF file (application/pdf)
     """
-    # Get events (for this demo, just generate a new certificate)
     events = (
         db.query(EventModel)
         .filter(EventModel.tenant_id == tenant_id)
@@ -130,17 +129,18 @@ async def get_certificate_pdf(
             detail="No events found",
         )
 
-    # Compute root
     hmacs = [e.hmac_value for e in events]
     root_hex = compute_root_hex(hmacs)
+    signature_hex = sign_root_hex(root_hex, key_custody.signing_key())
 
-    # Generate PDF (STUB: for now, return a simple text representation)
-    pdf_content = generate_certificate_pdf(
+    pdf_content = certificate_renderer.render(
         tenant_id=tenant_id,
         root_hex=root_hex,
+        signature_hex=signature_hex,
+        key_id=key_custody.key_id(),
         from_event=events[0].id,
         to_event=events[-1].id,
-        timestamp=datetime.utcnow(),
+        generated_at=datetime.utcnow(),
     )
 
     return StreamingResponse(
@@ -148,103 +148,6 @@ async def get_certificate_pdf(
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=certificate_{certificate_id}.pdf"},
     )
-
-
-def generate_certificate_pdf(
-    tenant_id: str,
-    root_hex: str,
-    from_event: int,
-    to_event: int,
-    timestamp: datetime,
-) -> bytes:
-    """
-    Generate a BSA §63 certificate as PDF (STUB).
-
-    For now, returns a simple text representation.
-    In production, uses ReportLab to generate a proper PDF.
-
-    Args:
-        tenant_id: Customer identifier
-        root_hex: Merkle root (32 bytes as hex)
-        from_event: First event in this anchor window
-        to_event: Last event in this anchor window
-        timestamp: When the certificate was generated
-
-    Returns:
-        bytes: PDF content (or text for now)
-    """
-    # STUB: For now, return a text representation
-    # In production, this would use ReportLab to generate a real PDF
-    text_content = f"""
-BSA §63 CERTIFICATE OF ELECTRONIC RECORD
-Generated: {timestamp.isoformat()}
-
-PART A: DESCRIPTION OF THE RECORD
-
-Tenant ID: {tenant_id}
-Record Type: Merkle Hash Tree (Digital Evidence)
-Hash Algorithm: SHA-256
-Hash Value (Root): {root_hex}
-Sequence Range: Events {from_event} to {to_event}
-
-This certificate attests that the above hash value was computed from a
-Merkle tree constructed over event records in the ledger, as follows:
-
-Each event was canonicalised to deterministic JSON, hashed with HMAC-SHA256
-using a client-held key, and chained (each event's HMAC depends on the
-previous event's HMAC).
-
-The Merkle root computed from this chain uniquely commits to all events in
-the range. Any alteration to any event will change the root, making tampering
-detectable.
-
-PART B: ATTESTATION BY PERSON IN CHARGE (TEMPLATE)
-
-To be completed by the customer's authorised representative:
-
-I, __________________ (Name), holding the position of __________________
-at {tenant_id}, do hereby attest that:
-
-1. The electronic record system described in Part A was operating properly
-   on the date this certificate was generated.
-
-2. The record has not been altered since generation of this certificate.
-
-3. I have authority to make this attestation on behalf of the organisation.
-
-Signature: ___________________________
-
-Date: ___________________________
-
----
-
-VERIFICATION INSTRUCTIONS
-
-To verify this certificate:
-
-1. Obtain the Merkle root: {root_hex}
-2. Retrieve the event records from the ledger
-3. Recompute the canonical form of each event
-4. Recompute the Merkle tree
-5. Verify the root matches the value in this certificate
-
-If the root matches, no events have been altered (tamper-evident).
-
-If the root does not match, at least one event has been changed since
-this certificate was generated.
-
----
-
-STUB NOTICE
-
-This certificate is generated in demonstration mode. Before production use:
-1. Obtain legal review of the certificate format
-2. Implement RFC 3161 external timestamping
-3. Add proper digital signature (currently placeholder)
-4. Generate as PDF with proper formatting (not text)
-
-"""
-    return text_content.encode("utf-8")
 
 
 @router.post("/generate")
@@ -287,7 +190,7 @@ async def generate_certificate_for_range(
     hmacs = [e.hmac_value for e in events]
     root_hex = compute_root_hex(hmacs)
 
-    # Sign with the process's stable key (see ADR 0013).
+    # Sign with the process's stable key (see ADR 0014).
     signature_hex = sign_root_hex(root_hex, key_custody.signing_key())
 
     return {

@@ -20,14 +20,24 @@ Why this file exists
 """
 
 from praman.config import settings
-from praman.factories import build_key_custody
+from praman.factories import build_certificate_renderer, build_key_custody
+from praman.ports.certificate_renderer import CertificateRenderer
 from praman.ports.key_custody import KeyCustody
 
 # Built once, at import time, for the life of the process. Every request
 # that depends on get_key_custody() receives this same object.
 _key_custody: KeyCustody = build_key_custody(settings)
 
+# Built once, at import time — rendering is stateless, but constructing it
+# per request would be pointless work on every certificate download.
+_certificate_renderer: CertificateRenderer = build_certificate_renderer(settings)
+
 
 def get_key_custody() -> KeyCustody:
     """FastAPI dependency: the process's single KeyCustody instance."""
     return _key_custody
+
+
+def get_certificate_renderer() -> CertificateRenderer:
+    """FastAPI dependency: the process's single CertificateRenderer instance."""
+    return _certificate_renderer

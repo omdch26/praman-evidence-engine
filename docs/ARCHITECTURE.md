@@ -75,15 +75,18 @@ praman/
 │
 ├── ports/                           # Abstract interfaces (Protocols)
 │   ├── __init__.py
-│   └── key_custody.py               # KeyCustody protocol (ADR 0014)
+│   ├── key_custody.py               # KeyCustody protocol (ADR 0014)
+│   └── certificate_renderer.py      # CertificateRenderer protocol (ADR 0017)
 │
 ├── adapters/                        # Concrete implementations (one file per strategy)
 │   ├── __init__.py
 │   ├── instrumentation/
 │   │   └── otel_adapter.py          # gen_ai.* attribute mapping
-│   └── key_custody/
-│       ├── environment_key.py       # Loads a stable key from an env var (ships now)
-│       └── hsm_kms.py                # HSM/KMS custody (documented, not implemented)
+│   ├── key_custody/
+│   │   ├── environment_key.py       # Loads a stable key from an env var (ships now)
+│   │   └── hsm_kms.py                # HSM/KMS custody (documented, not implemented)
+│   └── certificate/
+│       └── reportlab_renderer.py    # Real PDF via ReportLab (ships now, ADR 0017)
 │
 ├── observability/
 │   └── otel.py                      # OTel tracer/meter initialisation
@@ -136,8 +139,10 @@ tests/
 ├── services/
 │   └── test_evidence_service.py     # Bundle assembly, byte-round-trip through JSONB
 ├── adapters/
-│   └── key_custody/
-│       └── test_environment_key.py  # Stable key, fails loudly on bad config (ADR 0014)
+│   ├── key_custody/
+│   │   └── test_environment_key.py  # Stable key, fails loudly on bad config (ADR 0014)
+│   └── certificate/
+│       └── test_reportlab_renderer.py  # Output is a real PDF (ADR 0017)
 ├── scripts/
 │   └── test_verify_bundle.py        # Standalone verifier, subprocess-tested
 └── integration/
@@ -168,7 +173,8 @@ docs/
 │   ├── 0013-otel-genai-conventions.md
 │   ├── 0014-key-custody-port.md
 │   ├── 0015-demo-tamper-endpoint.md
-│   └── 0016-client-side-verification.md
+│   ├── 0016-client-side-verification.md
+│   └── 0017-certificate-renderer-port.md
 ├── LIMITATIONS.md                   # Every stub, disclosed twice
 ├── GLOSSARY.md                      # Fixed vocabulary
 ├── ONBOARDING.md                    # Day-one path for next engineer
@@ -306,6 +312,7 @@ When any detector triggers, the system halts the agent and falls back to manual 
 | Port | Ships | Alternative (documented, not implemented) |
 |---|---|---|
 | `KeyCustody` | `EnvironmentKeyCustody` — stable key from an env var (ADR 0014) | `HsmKmsKeyCustody` — `adapters/key_custody/hsm_kms.py` |
+| `CertificateRenderer` | `ReportLabCertificateRenderer` — real PDF via ReportLab (ADR 0017) | HTML renderer, other-jurisdiction formats — no adapter file yet |
 
 **Planned, not yet built** (no `ports/` file exists for these; do not import them):
 
@@ -314,7 +321,6 @@ When any detector triggers, the system halts the agent and falls back to manual 
 | Policy evaluation | JSON rules | OPA/Rego, Cedar | Not started |
 | Root anchoring | Local-only | RFC 3161, public chain | Not started (see LIMITATIONS.md) |
 | Drift scoring | Deterministic stub | PSI, semantic entropy | Stub exists in `domain/drift.py`, not behind a port |
-| Certificate rendering | Current: plain text in `certificates.py` | ReportLab/PDF, other jurisdictions | Not behind a port |
 
 **Why the built one matters:** `KeyCustody` is the concrete proof this pattern works — swapping `EnvironmentKeyCustody` for HSM/KMS custody later is one new adapter file plus one `factories.py` branch, not a rewrite of every caller that signs something. That is the same argument the four planned ports above are waiting to make once they exist; until then, treat the table above as a roadmap, not a description of the current codebase.
 

@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     ed25519_private_key_pem: Optional[str] = None
     key_custody_provider: str = "environment"  # "environment" | "hsm_kms" (not implemented)
 
+    # --- Certificate rendering (ports/certificate_renderer.py, ADR 0017)
+    certificate_renderer_provider: str = "reportlab"  # only one adapter ships
+
     # --- Demo mode (see api/routers/demonstration.py)
     # Defaults False: an endpoint that attempts a live UPDATE against the
     # ledger must be opt-in, never on by accident in a customer deployment.
