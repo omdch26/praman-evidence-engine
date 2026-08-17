@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     # --- Cryptography
     ed25519_private_key_path: Optional[str] = None  # Path to private key file
     hmac_key: Optional[str] = None  # Client-provided HMAC key (base64-encoded)
+    # Ed25519 signing key: PEM, then base64-encoded (survives env-var transport
+    # without newline-mangling). Required for KEY_CUSTODY_PROVIDER=environment.
+    # See adapters/key_custody/environment_key.py and docs/DEPLOYMENT.md for
+    # how to generate one.
+    ed25519_private_key_pem: Optional[str] = None
+    key_custody_provider: str = "environment"  # "environment" | "hsm_kms" (not implemented)
+
+    # --- Demo mode (see api/routers/demonstration.py)
+    # Defaults False: an endpoint that attempts a live UPDATE against the
+    # ledger must be opt-in, never on by accident in a customer deployment.
+    demo_mode_enabled: bool = False
 
     # --- Modules (enable/disable)
     module_privacy_enabled: bool = True

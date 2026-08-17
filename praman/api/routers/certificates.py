@@ -30,12 +30,14 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 import io
 
+from praman.dependencies import get_key_custody
 from praman.persistence.database import get_db
 from praman.persistence.models import Event as EventModel, Certificate as CertificateModel
 from praman.domain.canonical import canonicalise
 from praman.domain.hashing import compute_hmac_hex
 from praman.domain.merkle import compute_root_hex
-from praman.domain.signing import generate_keypair, sign_root_hex
+from praman.domain.signing import sign_root_hex
+from praman.ports.key_custody import KeyCustody
 
 router = APIRouter()
 
@@ -43,6 +45,7 @@ router = APIRouter()
 @router.get("/latest")
 async def get_latest_certificate(
     db: Session = Depends(get_db),
+    key_custody: KeyCustody = Depends(get_key_custody),
     tenant_id: str = Header(..., alias="X-Tenant-ID"),
 ) -> Dict[str, Any]:
     """
@@ -54,7 +57,7 @@ async def get_latest_certificate(
         X-Tenant-ID: Unique customer identifier (required)
 
     Returns:
-        JSON with root, signature, sequence range, timestamp.
+        JSON with root, signature, key_id, sequence range, timestamp.
     """
     # Get all events for this tenant
     events = (
@@ -74,14 +77,17 @@ async def get_latest_certificate(
     hmacs = [e.hmac_value for e in events]
     root_hex = compute_root_hex(hmacs)
 
-    # Sign the root (STUB: using a fixed key for demo)
-    private_key, public_key = generate_keypair()
-    signature_hex = sign_root_hex(root_hex, private_key)
+    # Sign with the process's stable key (see ADR 0013 — this used to call
+    # generate_keypair() per request, producing a signature nobody could
+    # ever verify because the public key was thrown away with the private
+    # key on every call).
+    signature_hex = sign_root_hex(root_hex, key_custody.signing_key())
 
     return {
         "tenant_id": tenant_id,
         "merkle_root": root_hex,
         "signature": signature_hex,
+        "key_id": key_custody.key_id(),
         "from_event": events[0].id,
         "to_event": events[-1].id,
         "total_events": len(events),
@@ -246,6 +252,7 @@ async def generate_certificate_for_range(
     from_event: int,
     to_event: int,
     db: Session = Depends(get_db),
+    key_custody: KeyCustody = Depends(get_key_custody),
     tenant_id: str = Header(..., alias="X-Tenant-ID"),
 ) -> Dict[str, Any]:
     """
@@ -256,7 +263,7 @@ async def generate_certificate_for_range(
         to_event: Last event ID
 
     Returns:
-        JSON with certificate metadata and root.
+        JSON with certificate metadata, root, and key_id.
     """
     # Get events in range
     events = (
@@ -280,15 +287,15 @@ async def generate_certificate_for_range(
     hmacs = [e.hmac_value for e in events]
     root_hex = compute_root_hex(hmacs)
 
-    # Sign (STUB: fixed key)
-    private_key, public_key = generate_keypair()
-    signature_hex = sign_root_hex(root_hex, private_key)
+    # Sign with the process's stable key (see ADR 0013).
+    signature_hex = sign_root_hex(root_hex, key_custody.signing_key())
 
     return {
         "certificate_id": 1,  # STUB: would be persisted
         "tenant_id": tenant_id,
         "merkle_root": root_hex,
         "signature": signature_hex,
+        "key_id": key_custody.key_id(),
         "from_event": from_event,
         "to_event": to_event,
         "total_events": len(events),
