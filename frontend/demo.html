@@ -195,12 +195,6 @@ table.mapping th {
 table.mapping td { padding: 0.65rem 0.8rem; border-bottom: 1px solid #f0f0f0; vertical-align: top; }
 table.mapping .cite { color: #2563eb; font-weight: 600; white-space: nowrap; }
 
-/* Comparison table */
-table.cmp { width: 100%; border-collapse: collapse; }
-table.cmp th { text-align: left; background: #f3f4f6; padding: 0.75rem 1rem; border-bottom: 2px solid #e5e7eb; }
-table.cmp td { padding: 0.75rem 1rem; border-bottom: 1px solid #f0f0f0; }
-.hl { background: #fef3c7; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: 700; }
-
 .info {
     background: #eff6ff; border-left: 4px solid #2563eb; padding: 1rem 1.25rem; border-radius: 6px;
     font-size: 0.9rem; margin-top: 1rem;
@@ -383,9 +377,10 @@ footer a { color: #2563eb; text-decoration: none; }
         <div class="field">
             <label>AI autonomy tier</label>
             <select id="tier">
-                <option value="ACT_BOUNDED">ACT_BOUNDED (can decide within limits)</option>
-                <option value="PROPOSE">PROPOSE (can only recommend)</option>
                 <option value="OBSERVE">OBSERVE (read-only, cannot decide)</option>
+                <option value="PROPOSE">PROPOSE (can only recommend)</option>
+                <option value="ACT_BOUNDED">ACT_BOUNDED (can decide within limits)</option>
+                <option value="ACT_FULL">ACT_FULL (unrestricted within policy)</option>
             </select>
         </div>
         <div class="field">
@@ -440,6 +435,7 @@ footer a { color: #2563eb; text-decoration: none; }
     <div class="btn-row" style="margin-top:0;">
         <button class="btn-primary" onclick="runVerification()" id="verifyBtn">Fetch bundle &amp; verify</button>
         <button class="btn-ghost" onclick="downloadEvidenceBundle()" id="downloadBtn">⬇ Download evidence bundle</button>
+        <button class="btn-ghost" onclick="downloadCertificate()" id="downloadCertBtn">⬇ Download BSA §63 certificate (PDF)</button>
     </div>
     <div class="verify-steps" id="verifySteps"></div>
     <div class="reg-table">
@@ -499,24 +495,6 @@ footer a { color: #2563eb; text-decoration: none; }
             <td>Confirms "the device operated properly throughout" — a precondition for the certificate to be valid</td>
         </tr>
     </table>
-</div>
-
-<!-- Cost comparison -->
-<div class="card">
-    <div class="eyebrow">Why Not Blockchain</div>
-    <h2>Cost & complexity</h2>
-    <table class="cmp">
-        <tr><th></th><th>Blockchain</th><th>Praman</th></tr>
-        <tr><td>Monthly cost</td><td><span class="hl">₹5–50 lakh</span></td><td><span class="hl">₹10,000</span> — about 50× cheaper</td></tr>
-        <tr><td>Response time</td><td>~30 seconds</td><td>~10 milliseconds</td></tr>
-        <tr><td>Operational team</td><td>5–10 people</td><td>0 — fully automated</td></tr>
-        <tr><td>Solves DPDP erasure</td><td>No — immutability conflicts with erasure</td><td>Yes — no personal data on-chain</td></tr>
-    </table>
-    <div class="info" style="margin-top:1rem;">
-        Blockchain solves consensus, which matters when no single party is trusted. A bank is already the trusted party.
-        It doesn't need 50 computers to agree on a loan decision. It needs tamper-evidence, and a Merkle tree
-        gives you that for a fraction of the cost.
-    </div>
 </div>
 
 <!-- Roadmap -->
@@ -696,7 +674,10 @@ async function generateLedger() {
     const amount = document.getElementById('loanAmount').value;
     const tier = document.getElementById('tier').value;
     const risk = parseFloat(document.getElementById('riskScore').value);
-    const allowed = tier === 'ACT_BOUNDED' && risk <= 0.65;
+    // ACT_FULL has no value/risk cap enforced by the tier itself (per
+    // domain/governance.py's own docstring) -- ACT_BOUNDED is the only tier
+    // gated by this demo's 0.65 risk threshold.
+    const allowed = tier === 'ACT_FULL' || (tier === 'ACT_BOUNDED' && risk <= 0.65);
     const decision = allowed ? 'APPROVED' : 'DENIED';
 
     const descriptions = [
@@ -771,15 +752,24 @@ async function generateLedger() {
     // Governance panel
     const govBox = document.getElementById('govResult');
     if (allowed) {
-        govBox.innerHTML = `<div class="verify-item"><div class="check">✓</div><div><div class="t">Allowed</div><div class="d">${tier} may act at risk score ${risk} — within policy bounds, decision proceeds.</div></div></div>`;
+        const allowedReason = tier === 'ACT_FULL'
+            ? 'ACT_FULL may act without the tier-level risk cap that constrains ACT_BOUNDED — policy and drift detection still apply, but this tier\'s own gate does not.'
+            : `${tier} may act at risk score ${risk} — within policy bounds, decision proceeds.`;
+        govBox.innerHTML = `<div class="verify-item"><div class="check">✓</div><div><div class="t">Allowed</div><div class="d">${allowedReason}</div></div></div>`;
     } else {
         let reason;
         if (tier === 'OBSERVE') {
             reason = 'OBSERVE tier is read-only and cannot make this decision.';
         } else if (tier === 'PROPOSE') {
             reason = 'PROPOSE tier can only recommend a decision to a human reviewer — it cannot act autonomously, regardless of risk score.';
-        } else {
+        } else if (tier === 'ACT_BOUNDED') {
             reason = 'Risk score ' + risk + ' exceeds the 0.65 threshold — circuit breaker halts autonomous action, falls back to human review.';
+        } else {
+            // ACT_FULL is always `allowed` above and never reaches this
+            // branch — this default exists only so a future tier addition
+            // fails loudly with a visible message instead of silently
+            // showing the wrong reason.
+            reason = `No blocking rule defined for tier "${tier}" in this demo.`;
         }
         govBox.innerHTML = `<div class="verify-item fail"><div class="check">✗</div><div><div class="t">Blocked</div><div class="d">${reason}</div></div></div>`;
     }
@@ -1112,6 +1102,48 @@ async function downloadEvidenceBundle() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    btn.disabled = false;
+}
+
+// Binary counterpart to apiCall() — a PDF response can't go through
+// resp.json(), so this fetches and logs the same way but keeps the body
+// as a Blob instead of parsing it.
+async function downloadCertificate() {
+    const btn = document.getElementById('downloadCertBtn');
+    btn.disabled = true;
+    const path = '/certificates/1';
+    const url = `${API_URL}${path}`;
+    const start = performance.now();
+
+    try {
+        const resp = await fetch(url, {
+            method: 'GET',
+            headers: { 'X-Tenant-ID': TENANT_ID },
+        });
+        const ms = Math.round(performance.now() - start);
+        logRequest('GET', url, resp.status, ms, resp.ok);
+
+        if (!resp.ok) {
+            alert('Could not fetch a certificate — generate a ledger above first.');
+            btn.disabled = false;
+            return;
+        }
+
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `praman-certificate-${TENANT_ID}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+        const ms = Math.round(performance.now() - start);
+        logRequest('GET', url, 'ERR', ms, false);
+        alert('Certificate download failed — see the request log above.');
+    }
 
     btn.disabled = false;
 }

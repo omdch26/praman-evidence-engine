@@ -398,7 +398,7 @@ only governs use going forward.
 
 ## Questions?
 
-- **Why not blockchain?** See [`docs/ADR/0002-merkle-over-blockchain.md`](docs/ADR/0002-merkle-over-blockchain.md), or the cost comparison in the [live demo](https://praman-evidence-engine.vercel.app/demo)
+- **Why not blockchain?** See [`docs/ADR/0002-merkle-over-blockchain.md`](docs/ADR/0002-merkle-over-blockchain.md) for the full comparison — cost, consensus, latency, and legal standing in India
 - **Is this admissible in court?** See [`LIMITATIONS.md`](docs/LIMITATIONS.md) — the BSA §63 certificate format is implemented; court admissibility itself has not been tested
 - **Which regulation does each feature satisfy?** Flip the expert toggle in the [live demo](https://praman-evidence-engine.vercel.app/demo) for a feature-by-feature mapping to DPDP Rules 2025, RBI's FREE-AI Framework, and BSA §63
 - **For technical questions:** Open an issue. Read [`ONBOARDING.md`](docs/ONBOARDING.md) first.
