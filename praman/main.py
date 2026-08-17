@@ -28,6 +28,7 @@ from praman import __version__
 from praman.api.routers import events as events_router
 from praman.api.routers import certificates as certificates_router
 from praman.api.routers import governance as governance_router
+from praman.api.routers import demonstration as demonstration_router
 from praman.api.routers import keys as keys_router
 from praman.api.routers import evidence as evidence_router
 from praman.persistence.database import init_database
@@ -103,6 +104,7 @@ app.add_middleware(
 app.include_router(events_router.router, prefix="/events", tags=["events"])
 app.include_router(certificates_router.router, prefix="/certificates", tags=["certificates"])
 app.include_router(governance_router.router, prefix="/governance", tags=["governance"])
+app.include_router(demonstration_router.router, prefix="/demo", tags=["demonstration"])
 app.include_router(keys_router.router, prefix="/keys", tags=["keys"])
 app.include_router(evidence_router.router, prefix="/evidence", tags=["evidence"])
 
