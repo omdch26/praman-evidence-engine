@@ -47,6 +47,34 @@ HMAC-chain verification by an outside party would not be possible without
 that tenant's own key. The Merkle root and Ed25519 signature checks do
 not depend on this and remain independently verifiable regardless.
 
+## Why you don't have to trust Praman's code either
+
+Everything above still runs code Praman wrote — the browser panel, the
+standalone script. A fair next question: what stops that code from simply
+returning "valid" no matter what you feed it?
+
+Nothing stops it, and that isn't actually the point. SHA-256 and Ed25519
+are public, independently implemented standards — not something Praman
+invented or controls. You do not have to run Praman's verifier at all.
+Fetch a bundle from `/evidence/bundle` and the key from `/keys/public`,
+then check them with OpenSSL, or Python's `cryptography` library, or any
+other Ed25519 implementation you already trust for something else
+entirely. If Praman's numbers don't match what an unrelated tool computes
+from the same public inputs, that disagreement is the finding — not a bug
+report Praman gets to grade itself on.
+
+`scripts/verify_bundle.py` doesn't import anything from the `praman`
+package for exactly this reason: it is a second, independent
+implementation of the same specification, not a wrapper around the first
+one. Two independent implementations agreeing is evidence. One
+implementation agreeing with itself is not.
+
+This is the actual reason asymmetric signatures exist as a category: they
+let someone who trusts nothing about the signer check a claim anyway,
+using only public information and standard, widely implemented
+mathematics. Praman's job is to generate a signature correctly and
+publish the key — not to be trusted when marking its own homework.
+
 ## Bundle format
 
 `GET /evidence/bundle` (header `X-Tenant-ID: <your tenant>`) returns:

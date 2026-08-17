@@ -1,7 +1,7 @@
 # Praman — Tamper-Evident Evidence Engine for Regulated AI in India
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)  
-**Status:** Live · **Last updated:** 16 Aug 2026
+[![License: BUSL 1.1](https://img.shields.io/badge/License-BUSL%201.1-blue.svg)](LICENSE)  
+**Status:** Live · **Last updated:** 17 Aug 2026
 
 **Live:** https://praman-evidence-engine.vercel.app · **Backend:** https://praman-evidence-engine.onrender.com/health
 
@@ -378,7 +378,21 @@ pytest --cov=praman tests/
 
 ## License
 
-MIT. Use it as you wish. Include a copy of `LICENSE` if you redistribute.
+[Business Source License 1.1](LICENSE). In plain terms: the code is fully
+public and readable, and you can copy, modify, and use it for development,
+testing, research, and evaluation — including independently verifying the
+cryptographic evidence this system produces (see
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md)). Running it in production
+for a third party, or using it to build a competing product or service,
+requires a commercial license — email medarsri@gmail.com. On 17 Aug 2030
+this license converts automatically to the MIT License, and the code
+becomes fully open.
+
+This isn't the license this repository launched under. It was previously
+marked MIT; that was a mistake made early and is being corrected in the
+open rather than quietly. Anyone who obtained a copy while it was
+genuinely MIT-licensed retains those rights for that copy — this change
+only governs use going forward.
 
 ---
 
