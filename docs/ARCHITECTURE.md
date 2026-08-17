@@ -69,90 +69,104 @@ praman/
 │   ├── hashing.py                   # HMAC construction
 │   └── merkle.py                    # Merkle tree, root, inclusion proofs
 │
+├── domain/                          # Pure logic, no I/O, no framework (existing files
+│   │                                 # not re-listed below — see Overview section)
+│   └── verification.py              # Independent bundle verification (ADR 0016)
+│
 ├── ports/                           # Abstract interfaces (Protocols)
 │   ├── __init__.py
-│   ├── event_repository.py          # EventRepository protocol
-│   ├── signer.py                    # Signer protocol
-│   ├── policy_engine.py             # PolicyEngine protocol
-│   ├── drift_scorer.py              # DriftScorer protocol
-│   ├── anchor_backend.py            # AnchorBackend protocol
-│   └── certificate_renderer.py      # CertificateRenderer protocol
+│   └── key_custody.py               # KeyCustody protocol (ADR 0014)
 │
 ├── adapters/                        # Concrete implementations (one file per strategy)
 │   ├── __init__.py
-│   ├── policy/
-│   │   ├── json_rules.py            # JSON policy engine (ships now)
-│   │   └── rego.py                  # OPA Rego (documented, not implemented)
-│   ├── signing/
-│   │   └── ed25519.py               # Ed25519 signing
-│   ├── drift/
-│   │   ├── deterministic_stub.py    # STUB — disclosed in LIMITATIONS.md
-│   │   ├── psi.py                   # Population Stability Index (documented, not impl)
-│   │   └── semantic_entropy.py      # Semantic entropy (documented, not impl)
-│   ├── anchor/
-│   │   ├── local_only.py            # Writes to local ledger only
-│   │   └── rfc3161_freetsa.py       # RFC 3161 timestamping
-│   ├── certificate/
-│   │   └── reportlab_bsa63.py       # BSA §63 certificate rendering
-│   └── repository/
-│       └── postgres_event_repository.py  # Implements EventRepository
+│   ├── instrumentation/
+│   │   └── otel_adapter.py          # gen_ai.* attribute mapping
+│   └── key_custody/
+│       ├── environment_key.py       # Loads a stable key from an env var (ships now)
+│       └── hsm_kms.py                # HSM/KMS custody (documented, not implemented)
+│
+├── observability/
+│   └── otel.py                      # OTel tracer/meter initialisation
 │
 ├── services/                        # Orchestration — depends on ports, never on adapters
 │   ├── __init__.py
-│   ├── ledger_service.py            # Append events, generate roots, proofs
-│   ├── governance_service.py        # Evaluate policies, apply decisions
-│   ├── drift_service.py             # Detect drift, trigger breaker
-│   └── evidence_service.py          # Generate certificates
+│   ├── event_logger.py              # Log governance decisions + halts to Module 1
+│   └── evidence_service.py          # Assemble independently-verifiable evidence bundles
 │
 ├── persistence/                     # SQLAlchemy models + repositories
 │   ├── __init__.py
-│   ├── models.py                    # ORM: Event, Policy, Tenant, etc.
+│   ├── database.py                  # Engine, session factory, migration runner
+│   ├── models.py                    # ORM: Event, Certificate, Tenant, Policy
 │   └── migrations/
 │       └── 001_initial_schema.sql   # Append-only trigger, RLS
 │
 ├── api/                             # FastAPI routes (thin — parse, call, return)
 │   ├── __init__.py
-│   ├── routers/
-│   │   ├── events.py                # POST /events, GET /events/:id
-│   │   ├── certificates.py          # GET /certificates/:id
-│   │   ├── governance.py            # GET /governance/tiers, POST /governance/evaluate
-│   │   └── health.py                # GET /health
-│   └── middleware/
-│       └── tenant_scope.py          # RLS: extract tenant from request
+│   └── routers/
+│       ├── events.py                 # POST /events, GET /events/:id
+│       ├── certificates.py           # GET /certificates/latest, /generate, /:id
+│       ├── governance.py             # POST /governance/evaluate, GET /governance/status
+│       ├── demonstration.py          # POST /demo/tamper-attempt (ADR 0015)
+│       ├── keys.py                   # GET /keys/public (ADR 0014)
+│       └── evidence.py               # GET /evidence/bundle (ADR 0016)
 │
 ├── modules/                         # Independent module registrations
 │   ├── __init__.py
-│   ├── privacy/
-│   │   ├── __init__.py              # Module 1 registration
-│   │   └── routes.py                # Privacy-specific routes
-│   └── ai_risk/
-│       ├── __init__.py              # Module 2 registration
-│       └── routes.py                # Governance-specific routes
+│   ├── privacy/__init__.py          # Module 1 registration
+│   └── ai_risk/__init__.py          # Module 2 registration
 │
 ├── main.py                          # FastAPI app initialization
 ├── config.py                        # Typed settings (env-driven)
-└── factories.py                     # Build adapters from config (ONLY place to name them)
+├── factories.py                     # Build adapters from config (ONLY place to name them)
+└── dependencies.py                  # FastAPI dependency providers (process-lifetime singletons)
 
 tests/
 ├── __init__.py
 ├── test_architecture.py             # Import graph enforcement
+├── test_factories.py                # Adapter construction fails loudly on bad config
+├── test_verification_doc.py         # docs/VERIFICATION.md's worked example stays correct
 ├── domain/
 │   ├── test_canonical.py            # Event serialisation is deterministic
 │   ├── test_hashing.py              # HMAC properties
-│   └── test_merkle.py               # Tamper-evidence, inclusion proofs
-├── integration/
-│   └── test_ledger_flow.py          # End-to-end: event → root → certificate
-└── modules/
-    └── test_module_registration.py
+│   ├── test_merkle.py               # Tamper-evidence, inclusion proofs
+│   ├── test_signing.py              # Ed25519 sign/verify
+│   ├── test_governance.py           # Autonomy tiers, delegation ceilings
+│   ├── test_drift.py                # Circuit breaker evaluation
+│   └── test_verification.py         # Independent bundle verification (ADR 0016)
+├── services/
+│   └── test_evidence_service.py     # Bundle assembly, byte-round-trip through JSONB
+├── adapters/
+│   └── key_custody/
+│       └── test_environment_key.py  # Stable key, fails loudly on bad config (ADR 0014)
+├── scripts/
+│   └── test_verify_bundle.py        # Standalone verifier, subprocess-tested
+└── integration/
+    ├── test_ledger_flow.py          # End-to-end: event → HMAC chain
+    ├── test_full_flow.py            # Module 1 + Module 2 combined
+    ├── test_governance_endpoints.py
+    ├── test_demonstration_endpoint.py  # Tamper-attempt endpoint, all four safety gates
+    └── test_evidence_endpoints.py      # /keys/public + /evidence/bundle, full verify round-trip
+
+scripts/
+└── verify_bundle.py                 # Standalone offline verifier — does NOT import praman/
+
+frontend/
+├── demo.html                        # Single static file — real backend calls, WebCrypto
+│                                     # verification panel, no build step
+└── vercel.json                      # Root-to-/demo rewrite, clean URLs
 
 docs/
 ├── ARCHITECTURE.md                  # This file
+├── VERIFICATION.md                  # How to verify a bundle, incl. worked hex example
 ├── ADR/
 │   ├── 0001-layered-architecture.md
 │   ├── 0002-merkle-over-blockchain.md
 │   ├── 0003-hmac-over-hashing.md
 │   ├── 0012-module-two-build-gate.md
-│   └── 0013-otel-genai-conventions.md
+│   ├── 0013-otel-genai-conventions.md
+│   ├── 0014-key-custody-port.md
+│   ├── 0015-demo-tamper-endpoint.md
+│   └── 0016-client-side-verification.md
 ├── LIMITATIONS.md                   # Every stub, disclosed twice
 ├── GLOSSARY.md                      # Fixed vocabulary
 ├── ONBOARDING.md                    # Day-one path for next engineer
@@ -163,6 +177,8 @@ docs/
     ├── ...
     └── 08-VALIDATION-METHOD.md
 ```
+
+**A note on this diagram's history:** earlier versions of this file described several `ports/`, `adapters/`, and `services/` files (`event_repository.py`, `signer.py`, `policy_engine.py`, `ledger_service.py`, and others) that were never actually built — the diagram was written ahead of the code. The tree above reflects what exists in this repository today, verified against the actual filesystem, not the earlier aspirational version. If you find a mismatch between this tree and `find praman -name "*.py"`, trust the filesystem and file an issue.
 
 ---
 
@@ -288,17 +304,22 @@ When any detector triggers, the system halts the agent and falls back to manual 
 
 ## Strategy Interfaces (Swappable Concerns)
 
-Five concerns are behind Strategy interfaces:
+**Built and real, in `ports/` today:**
 
-| Port | Ships | Alternatives (documented, not implemented) |
+| Port | Ships | Alternative (documented, not implemented) |
 |---|---|---|
-| `PolicyEngine` | JSON rules | OPA/Rego, Cedar |
-| `AnchorBackend` | Local-only | RFC 3161, public chain |
-| `Signer` | Ed25519 | ECDSA P-256, HSM/KMS |
-| `DriftScorer` | Deterministic stub | PSI, semantic entropy |
-| `CertificateRenderer` | ReportLab (BSA §63 format) | HTML/PDF, other jurisdictions |
+| `KeyCustody` | `EnvironmentKeyCustody` — stable key from an env var (ADR 0014) | `HsmKmsKeyCustody` — `adapters/key_custody/hsm_kms.py` |
 
-**Why:** A bank already running OPA should swap one adapter, not rewrite the system. Keeping these behind protocols means adoption is an afternoon, not a rewrite.
+**Planned, not yet built** (no `ports/` file exists for these; do not import them):
+
+| Concern | Would ship | Alternative | Status |
+|---|---|---|---|
+| Policy evaluation | JSON rules | OPA/Rego, Cedar | Not started |
+| Root anchoring | Local-only | RFC 3161, public chain | Not started (see LIMITATIONS.md) |
+| Drift scoring | Deterministic stub | PSI, semantic entropy | Stub exists in `domain/drift.py`, not behind a port |
+| Certificate rendering | Current: plain text in `certificates.py` | ReportLab/PDF, other jurisdictions | Not behind a port |
+
+**Why the built one matters:** `KeyCustody` is the concrete proof this pattern works — swapping `EnvironmentKeyCustody` for HSM/KMS custody later is one new adapter file plus one `factories.py` branch, not a rewrite of every caller that signs something. That is the same argument the four planned ports above are waiting to make once they exist; until then, treat the table above as a roadmap, not a description of the current codebase.
 
 ---
 
@@ -323,8 +344,9 @@ Database (Neon Postgres)
 
 Secrets
    ├── DATABASE_URL (Neon)
-   ├── ED25519_PRIVATE_KEY (persisted securely)
-   ├── CLIENT_HMAC_KEY (client-held; vendor never sees it)
+   ├── ED25519_PRIVATE_KEY_PEM (base64-encoded PEM; see ADR 0014 and .env.example)
+   ├── HMAC_KEY (client-held; vendor never sees it — separate from the demo's fixed key)
+   ├── DEMO_MODE_ENABLED (defaults false; gates POST /demo/tamper-attempt — see ADR 0015)
    └── Environment (development/production)
 ```
 
@@ -343,11 +365,18 @@ Secrets
 | **Integration** | `tests/integration/` | End-to-end flows work (event → root → cert) |
 | **Modules** | `tests/modules/` | Modules are independent and composable |
 
-**The four tests that carry the project** (never break):
-1. `test_tampering_changes_root` — Merkle property: any change → root changes
-2. `test_canonicalisation_is_deterministic` — Same event → same hash always
-3. `test_certificate_root_matches_ledger` — Certificate's root reflects actual ledger
-4. `test_signature_fails_with_wrong_key` — Signing actually binds; tampering is detectable
+**The tests that carry the project** (never break; verified to exist by name, not assumed):
+1. `tests/domain/test_merkle.py::test_tampering_changes_root` — Merkle property: any change → root changes
+2. `tests/domain/test_canonical.py::test_canonical_is_deterministic` — Same event → same bytes always
+3. `tests/domain/test_signing.py::test_verify_signature_with_wrong_public_key` — Signing actually binds; a different key does not verify
+
+Plus, added by this repository's evidence-verification work (see ADR 0016):
+
+4. `tests/domain/test_verification.py::TestIndependentlyRecomputedRootMatchesServerRoot` — an independently recomputed root matches the server's claimed root
+5. `tests/domain/test_verification.py::TestVerifyBundleFullReport::test_tampered_hmac_value_fails_report_and_names_sequence` — tampering is detected and localised to the correct event
+6. `tests/scripts/test_verify_bundle.py::test_standalone_verifier_agrees_with_domain_verifier` — the standalone, non-`praman`-importing verifier reaches the same verdict as the in-process domain logic on the same bundle
+
+There is no `test_certificate_root_matches_ledger` in this codebase currently — an earlier version of this document named it, but it was never written. If you are the one who writes it, this is where to record it.
 
 ---
 
@@ -379,3 +408,7 @@ Secrets
 - `ADR/0003-hmac-over-hashing.md` — Why HMAC, not hash alone
 - `ADR/0012-module-two-build-gate.md` — Module 2 commercial gate
 - `ADR/0013-otel-genai-conventions.md` — OpenTelemetry instrumentation
+- `ADR/0014-key-custody-port.md` — Why signing keys are stable and behind a port
+- `ADR/0015-demo-tamper-endpoint.md` — Safety design for the live tamper-attempt endpoint
+- `ADR/0016-client-side-verification.md` — Why verification runs in the browser, not just server-side
+- `VERIFICATION.md` — How to independently verify an evidence bundle, with a worked example

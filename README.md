@@ -260,17 +260,45 @@ git push origin main
 
 ### Configuration
 
-Set environment variables on Render:
+Set environment variables on Render (see `.env.example` for the full list):
 
 ```bash
-DATABASE_URL=postgresql://...  # Neon connection string
-ED25519_PRIVATE_KEY_PATH=/tmp/private.pem  # Loaded at startup
+DATABASE_URL=postgresql://...            # Neon connection string
+ED25519_PRIVATE_KEY_PEM=<base64 PEM>     # Stable signing key — see ADR 0014.
+                                          # Generate one:
+                                          #   python -c "from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey; from cryptography.hazmat.primitives import serialization; import base64; k = Ed25519PrivateKey.generate(); print(base64.b64encode(k.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())).decode())"
+KEY_CUSTODY_PROVIDER=environment         # or "hsm_kms" (not implemented — raises)
+DEMO_MODE_ENABLED=false                  # Never set true on a deployment with real
+                                          # tenant data. See ADR 0015.
 MODULE_PRIVACY_ENABLED=true
 MODULE_AI_RISK_ENABLED=true
 OTEL_ENABLED=false  # Development mode
 ```
 
+**A misconfigured or missing `ED25519_PRIVATE_KEY_PEM` fails startup loudly** (`ConfigurationError`), rather than silently generating a throwaway key — see `adapters/key_custody/environment_key.py`'s docstring for why that's deliberate.
+
 The Vercel project needs no environment variables — `frontend/demo.html` calls the Render backend directly and its `vercel.json` sets Root Directory to `frontend`.
+
+### Don't trust us — verify
+
+Every claim this system makes about tamper-evidence is independently checkable, without trusting Praman's server to grade its own homework:
+
+```bash
+# 1. Fetch a real evidence bundle and the public key
+curl -s -H "X-Tenant-ID: demo-a1b2c3d4" \
+  https://praman-evidence-engine.onrender.com/evidence/bundle > bundle.json
+curl -s https://praman-evidence-engine.onrender.com/keys/public \
+  | python -c "import json,sys; print(json.load(sys.stdin)['public_key_pem'])" > key.pem
+
+# 2. Verify entirely offline, with a script that does not import this codebase
+python scripts/verify_bundle.py bundle.json --public-key key.pem
+```
+
+Or open the [live demo](https://praman-evidence-engine.vercel.app) and use the
+"Verify this yourself" panel — it runs the identical check in your own browser
+via native WebCrypto, with no server call needed to reach a verdict. See
+[`docs/VERIFICATION.md`](docs/VERIFICATION.md) for the full spec, a worked
+two-event example with real hex values, and what this does and does not prove.
 
 ---
 

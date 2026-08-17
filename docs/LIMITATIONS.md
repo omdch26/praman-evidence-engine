@@ -1,7 +1,7 @@
 # Praman — Known Limitations and Stubs
 
 **Last updated:** 16 Aug 2026  
-**Status:** Disclosed; see ADRs for context. Reviewed 16 Aug 2026 — all three stubs below (drift detection, HMAC key, RFC 3161) are unchanged and still accurate.
+**Status:** Disclosed; see ADRs for context. Reviewed 16 Aug 2026 — all stubs below are unchanged and still accurate, plus one closed (Ed25519 key stability, see below) and one new disclosure added (the demo tamper-attempt endpoint).
 
 This document lists every stub, shortcut, and untested assumption. Read this before claiming anything is production-ready.
 
@@ -34,10 +34,10 @@ Do not use Module 2 drift detection in production without implementing a real de
 
 ### HMAC Chaining Key — Fixed Demo Key
 
-**Location:** `api/routers/events.py` (`hmac_key`), `services/event_logger.py` (`_HMAC_KEY`)
+**Location:** `api/routers/events.py` (`hmac_key`), `services/event_logger.py` (`_HMAC_KEY`), `services/evidence_service.py` (`_DEMO_HMAC_KEY`)
 
 **What it does:**
-Every event — whether posted directly to `POST /events` or logged internally by Module 2 (policy decisions, circuit-breaker halts, drift scores) — is HMAC-chained using the same fixed 32-byte all-zero key, rather than a tenant-specific key.
+Every event — whether posted directly to `POST /events`, logged internally by Module 2 (policy decisions, circuit-breaker halts, drift scores), or bundled by `GET /evidence/bundle` for independent verification — is HMAC-chained using the same fixed 32-byte all-zero key, rather than a tenant-specific key. This is also, deliberately, what makes browser-side and standalone bundle verification possible at all in this build — see `docs/VERIFICATION.md`'s "disclosed limitation this depends on" section. A real per-tenant-key deployment would not be able to offer HMAC-chain verification to an outside party without sharing that tenant's key.
 
 **Why it is stubbed:**
 Per-tenant key management (generation, storage, rotation, and safe injection into both the API layer and the internal event logger) is a real key-management design decision, not a one-line fix. Using one fixed key keeps the demo's HMAC chain internally consistent — Module 1 and Module 2 events must chain with the *same* key or the chain breaks at the module boundary — without deciding the production key-custody model prematurely.
@@ -74,7 +74,7 @@ See `adapters/anchor/rfc3161_freetsa.py` (documented) for the FreeTSA integratio
 4. Verification uses TSA's public key (no ongoing trust in TSA)
 
 **Implication:**
-Local timestamps are self-asserted (the bank asserts when the root existed). Under adversarial scrutiny, this is weak. Use RFC 3161 for any production deployment. Implement it by end of Month 2.
+Local timestamps are self-asserted (the bank asserts when the root existed). Under adversarial scrutiny, this is weak. Say this plainly, not just here: **a vendor who controlled both the ledger and the system clock could, in principle, re-sign a doctored history with a plausible-looking timestamp.** The Merkle root and Ed25519 signature (see `docs/VERIFICATION.md`) prove the events weren't altered *after* signing — they do not prove *when* signing happened, beyond the signer's own say-so. External timestamp anchoring (RFC 3161) is what closes that specific gap, and it is not built yet. Use RFC 3161 for any production deployment. Implement it by end of Month 2.
 
 ---
 
@@ -159,21 +159,38 @@ Write integration tests that verify:
 
 **Assumption:** Praman's Ed25519 private key is stored encrypted at rest and never leaves the process.
 
-**Status:** Key is loaded from a file at startup; stored in memory during runtime.
+**Status (updated 16 Aug 2026):** Key stability is now fixed — see ADR 0014. Before this fix, `certificates.py` generated a brand-new keypair on every request and discarded the public key, so no signature could ever be verified by anyone; this was a real bug, not a documented limitation, and it is closed. What remains genuinely unresolved is below.
 
-**What could go wrong:**
-- Private key file is readable by other processes (file permissions)
+**Location:** `adapters/key_custody/environment_key.py` loads the key from the `ED25519_PRIVATE_KEY_PEM` environment variable, once, at process startup, and holds it in memory for the process's lifetime.
+
+**What could go wrong (still open):**
+- The environment variable is visible to anything that can read the process's environment (a misconfigured logging integration, a debug endpoint, a compromised sidecar)
 - Private key is dumped to disk in core dumps
 - Private key is logged in debug output
-- HSM/KMS integration is not available (single point of failure)
+- HSM/KMS integration is not available yet (single point of failure — `adapters/key_custody/hsm_kms.py` is designed, not implemented)
 
 **Mitigation:**
-1. Restrict key file to 0600 permissions (readable by app user only)
-2. Disable core dumps in production (OS-level: `ulimit -c 0`)
-3. Never log the key or any key-derived values
-4. Document HSM integration path (use `cryptography.hazmat.backends` with PKCS11 support)
+1. Disable core dumps in production (OS-level: `ulimit -c 0`)
+2. Never log the key or any key-derived values (verified: `main.py`'s startup log prints the database host, never the DATABASE_URL or key material)
+3. Treat `ED25519_PRIVATE_KEY_PEM` as seriously as `DATABASE_URL` in your platform's secret-management story (Render/Vercel environment variables, not committed to git)
+4. Implement HSM/KMS custody (`adapters/key_custody/hsm_kms.py`) before any deployment holding real customer evidentiary data
 
-**Timeline:** Month 1; implement file permissions and core-dump disabling before first deployment.
+**Timeline:** Key stability: done (16 Aug 2026). HSM/KMS custody: Month 3.
+
+---
+
+### Demo Tamper-Attempt Endpoint — Only Ever Targets Demo Tenants
+
+**Location:** `api/routers/demonstration.py` (`POST /demo/tamper-attempt`)
+
+**What it does:**
+Issues a genuine `UPDATE` against the `events` table for a demo-tenant's own event, inside a `SAVEPOINT` that is always rolled back, to show a visitor PostgreSQL's own rejection of the write (the append-only trigger fires). This is not a stub in the usual sense — it is a real, working feature — but it is a live endpoint whose entire purpose is attempting a write against the ledger, which is unusual enough to disclose explicitly rather than let a reviewer discover it unannounced.
+
+**Why this needs disclosure:**
+An endpoint that deliberately attempts to mutate the ledger is a different risk category from every other read-only or append-only endpoint in this system. It is gated four independent ways (disabled by default, demo-tenant-only by regex, tenant-scoped at the query level so cross-tenant reach is structurally impossible, and always rolled back in a `finally` block) — see `docs/ADR/0015-demo-tamper-endpoint.md` for the full design and the rejected alternative (faking the rejection client-side).
+
+**Implication:**
+`DEMO_MODE_ENABLED` must never be set to `true` on any deployment holding real tenant data. The tenant-regex gate (`^demo-[a-z0-9]{8}$`) is the actual backstop against a real tenant ever being targeted; the environment flag is a convenience default, not the safety boundary. Do not weaken the regex or remove the per-request tenant scoping without re-reading ADR 0015 in full first.
 
 ---
 
@@ -311,4 +328,8 @@ Format:
 ## Related
 
 - `ARCHITECTURE.md` — System design
+- `VERIFICATION.md` — How to independently verify an evidence bundle
 - `ADR/0012-module-two-build-gate.md` — Why Module 2 has a commercial gate
+- `ADR/0014-key-custody-port.md` — Key stability fix and the HSM/KMS swap path
+- `ADR/0015-demo-tamper-endpoint.md` — Safety design for the live tamper-attempt endpoint
+- `ADR/0016-client-side-verification.md` — Why verification runs in the browser
