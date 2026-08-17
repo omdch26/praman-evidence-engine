@@ -1,6 +1,6 @@
 # Praman — System Architecture
 
-**Status:** Active · **Last updated:** 16 Aug 2026
+**Status:** Active · **Last updated:** 17 Aug 2026
 
 ---
 
@@ -151,9 +151,11 @@ scripts/
 └── verify_bundle.py                 # Standalone offline verifier — does NOT import praman/
 
 frontend/
-├── demo.html                        # Single static file — real backend calls, WebCrypto
-│                                     # verification panel, no build step
-└── vercel.json                      # Root-to-/demo rewrite, clean URLs
+├── index.html                       # Front door served at / — positioning and three
+│                                     # routes (demo, architecture, contact)
+├── demo.html                        # Technical demo served at /demo — real backend
+│                                     # calls, WebCrypto verification panel, no build step
+└── vercel.json                      # Clean URLs; / serves index.html, /demo serves demo.html
 
 docs/
 ├── ARCHITECTURE.md                  # This file
@@ -170,15 +172,10 @@ docs/
 ├── LIMITATIONS.md                   # Every stub, disclosed twice
 ├── GLOSSARY.md                      # Fixed vocabulary
 ├── ONBOARDING.md                    # Day-one path for next engineer
-├── SCORING.md                       # Why drift scoring is stubbed
-└── commercial/
-    ├── 00-MARKET-THESIS.md
-    ├── 01-MARKET-RESEARCH.md
-    ├── ...
-    └── 08-VALIDATION-METHOD.md
+└── SCORING.md                       # Why drift scoring is stubbed
 ```
 
-**A note on this diagram's history:** earlier versions of this file described several `ports/`, `adapters/`, and `services/` files (`event_repository.py`, `signer.py`, `policy_engine.py`, `ledger_service.py`, and others) that were never actually built — the diagram was written ahead of the code. The tree above reflects what exists in this repository today, verified against the actual filesystem, not the earlier aspirational version. If you find a mismatch between this tree and `find praman -name "*.py"`, trust the filesystem and file an issue.
+**A note on this diagram's history:** earlier versions of this file described several `ports/`, `adapters/`, and `services/` files (`event_repository.py`, `signer.py`, `policy_engine.py`, `ledger_service.py`, and others) that were never actually built — the diagram was written ahead of the code. Earlier versions also listed a `docs/commercial/` folder of market and pricing documents that was planned but never created. The tree above reflects what exists in this repository today, verified against the actual filesystem, not the earlier aspirational version. If you find a mismatch between this tree and `find praman -name "*.py"`, trust the filesystem and file an issue.
 
 ---
 

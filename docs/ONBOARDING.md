@@ -230,7 +230,7 @@ Check the module docstring. If it imports something it should not, `test_archite
 
 ## Daily Standup
 
-When you deploy, update `HANDOFF.md`:
+There is no handover file tracked in this repository — deliberately. Handover state lives in the commit history and in the docs updated alongside each change (see CLAUDE.md §7). If your team wants a running checkpoint file, create one and add it here; the shape below works well:
 
 ```markdown
 ## Project State Checkpoint (updated [DATE])

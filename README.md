@@ -34,7 +34,7 @@ Module 2: AI Risk    — RBI FREE-AI Governance — Autonomy tiers + drift + bre
 - **HMAC-chained ledger:** Client holds the key; vendor cannot forge
 - **Merkle tree root:** Any event change is detectable; proof is tamper-evident
 - **Ed25519 signature:** Root is signed; the signature proves integrity
-- **RFC 3161 anchoring:** Independent Timestamping Authority proves when the root existed
+- **RFC 3161 anchoring:** *(not yet built — see [`LIMITATIONS.md`](docs/LIMITATIONS.md))* timestamps currently come from the local system clock, not an independent Timestamping Authority
 - **BSA §63 certificate:** PDF with hash value + algorithm (Schedule format); modelled on evidentiary requirements
 
 **Result:** A control operation (consent, data access, policy evaluation) is logged in a way that survives:
@@ -49,7 +49,7 @@ Module 2: AI Risk    — RBI FREE-AI Governance — Autonomy tiers + drift + bre
 
 - **Autonomy tiers:** OBSERVE, PROPOSE, ACT_BOUNDED, ACT_FULL
 - **Delegation ceilings:** Agent A (tier 2) spawning Agent B cannot escalate B's privilege
-- **Three drift detectors:** Data (PSI), semantic (entropy), behavioural (distribution)
+- **Drift detection:** *(stub — see [`LIMITATIONS.md`](docs/LIMITATIONS.md))* returns a reproducible score but measures nothing real. PSI, semantic-entropy, and behavioural detectors are designed, not implemented; the circuit breaker they feed is fully working
 - **Circuit breaker:** When drift triggers, agent halts; fallback to manual review (the halt itself is logged in Module 1)
 - **Real-time dashboard:** Two workspaces (privacy + governance) with three gauges
 
@@ -97,7 +97,7 @@ If the event involves an agent decision:
 
 1. Compute Merkle root over all events
 2. Sign the root with Ed25519
-3. Anchor the root with RFC 3161 (independent TSA timestamp)
+3. Timestamp the root *(currently the local system clock — RFC 3161 anchoring against an independent TSA is designed but not implemented)*
 4. Render a PDF (modelled on BSA §63 Schedule)
 5. Customer's CTO signs Part B (attestation that system was operating properly)
 
