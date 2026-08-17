@@ -78,6 +78,12 @@ header p.tag { color: #9ca3af; font-size: 1.05rem; max-width: 640px; margin: 0 a
 .route .route-desc { font-size: 0.87rem; color: #6b7280; }
 .route.primary { border-color: #2563eb; background: #eff6ff; }
 
+/* .talk is not itself a link — it holds two independent links (email,
+   LinkedIn) side by side, since a card can't be one <a> wrapping two
+   different hrefs. Styled to match the other route cards visually. */
+.route.talk .route-desc a { color: #2563eb; font-weight: 600; text-decoration: none; }
+.route.talk .route-desc a:hover { text-decoration: underline; }
+
 footer { text-align: center; color: #6b7280; font-size: 0.85rem; padding: 1.5rem 0; }
 footer a { color: #2563eb; text-decoration: none; }
 </style>
@@ -118,11 +124,14 @@ footer a { color: #2563eb; text-decoration: none; }
         <div class="route-title">How it's built</div>
         <div class="route-desc">Layered architecture, dependency rules, and the design decisions behind them, on GitHub.</div>
     </a>
-    <a class="route" href="mailto:medarsri@gmail.com">
+    <div class="route talk">
         <div class="route-icon">✉️</div>
         <div class="route-title">Talk to me</div>
-        <div class="route-desc">Email, or find me on <span style="text-decoration:underline;">LinkedIn</span> — links below.</div>
-    </a>
+        <div class="route-desc">
+            <a href="mailto:medarsri@gmail.com">Email</a> ·
+            <a href="https://www.linkedin.com/in/srihari-medarametla-ai-governance/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+    </div>
 </div>
 
 <footer>
