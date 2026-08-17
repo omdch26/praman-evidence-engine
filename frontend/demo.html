@@ -430,7 +430,7 @@ footer a { color: #2563eb; text-decoration: none; }
     <div class="verify-banner">
         <strong>None of this asks our server for an answer.</strong> Your browser fetches the raw evidence bundle and
         the public key, then recomputes the Merkle root and checks the Ed25519 signature itself, using native
-        WebCrypto (<code>crypto.subtle</code>) — no external library. <a href="https://github.com/omdch26/praman-evidence-engine/blob/main/frontend/demo.html" target="_blank" rel="noopener" style="color:#93c5fd;">View source</a> to read exactly what runs.
+        WebCrypto (<code>crypto.subtle</code>) — no external library. Open your browser's dev tools to read exactly what runs.
     </div>
     <div class="btn-row" style="margin-top:0;">
         <button class="btn-primary" onclick="runVerification()" id="verifyBtn">Fetch bundle &amp; verify</button>
@@ -441,10 +441,9 @@ footer a { color: #2563eb; text-decoration: none; }
     <div class="reg-table">
         <div class="info amber" style="margin-top:1rem;">
             <strong>Take it away and verify it without us:</strong> the downloaded bundle can be checked completely
-            offline with <code>scripts/verify_bundle.py</code> — a standalone verifier that does not import anything
-            from this codebase, so it does not share code with the thing it verifies. See
-            <a href="https://github.com/omdch26/praman-evidence-engine/blob/main/docs/VERIFICATION.md" target="_blank" style="color:#2563eb;">docs/VERIFICATION.md</a>
-            for the exact command and a worked example by hand.
+            offline with a standalone verifier that does not import anything from this codebase, so it does not
+            share code with the thing it verifies. Get in touch for the verification script and a worked example
+            by hand.
         </div>
     </div>
 </div>
@@ -503,9 +502,7 @@ footer a { color: #2563eb; text-decoration: none; }
     <h2>What's built, what's honest, what's next</h2>
     <p style="color:#374151; font-size:0.92rem; margin-bottom:1.25rem;">
         This is an MVP build. Rather than blur the line between working and aspirational,
-        every stub is disclosed in the code, in
-        <a href="https://github.com/omdch26/praman-evidence-engine/blob/main/docs/LIMITATIONS.md" target="_blank" style="color:#2563eb;">LIMITATIONS.md</a>,
-        and here. Click through:
+        every stub is disclosed in the code and here. Click through:
     </p>
 
     <div class="tabs">
@@ -547,9 +544,7 @@ footer a { color: #2563eb; text-decoration: none; }
 </div>
 
 <footer>
-    <a href="https://github.com/omdch26/praman-evidence-engine" target="_blank">GitHub</a> ·
     <a href="https://praman-evidence-engine.onrender.com/health" target="_blank">Live backend health check</a> ·
-    <a href="https://github.com/omdch26/praman-evidence-engine/blob/main/docs/VERIFICATION.md" target="_blank">How to verify by hand</a> ·
     Built for regulated AI in India
 </footer>
 
